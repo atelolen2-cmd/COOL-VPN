@@ -22,14 +22,20 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.lifecycleScope
 import com.dave_cli.proxybox.R
+import com.dave_cli.proxybox.auth.CoolVpnApi
+import com.dave_cli.proxybox.auth.LoginActivity
+import com.dave_cli.proxybox.data.db.AppDatabase
+import com.dave_cli.proxybox.data.repository.ProfileRepository
 import com.dave_cli.proxybox.core.CoreService
 import com.dave_cli.proxybox.core.LocaleHelper
 import com.dave_cli.proxybox.ui.add.AddProfileActivity
 import com.dave_cli.proxybox.ui.main.theme.ProxyBoxTheme
 import com.dave_cli.proxybox.ui.tv.TvMainActivity
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 
 class MainActivity : ComponentActivity() {
@@ -104,6 +110,7 @@ class MainActivity : ComponentActivity() {
                     onBack = { showSettings = false },
                     onOpenSplitTunnel = { showSplitTunnel = true },
                     onLanguageChanged = { localeVersion++ },
+                    onLogout = { logoutAndReturnToLogin() },
                 )
             } else {
                 MainScreen(
@@ -214,6 +221,22 @@ class MainActivity : ComponentActivity() {
                 pendingWidgetConnect = false
                 moveTaskToBack(true)
             }
+        }
+    }
+
+    private fun logoutAndReturnToLogin() {
+        if (CoreService.isActive) stopVpn()
+        lifecycleScope.launch {
+            withContext(Dispatchers.IO) {
+                CoolVpnApi(this@MainActivity).clearSession()
+                ProfileRepository(AppDatabase.getInstance(applicationContext)).clearCoolVpnSubscription()
+            }
+            startActivity(
+                Intent(this@MainActivity, LoginActivity::class.java).addFlags(
+                    Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                )
+            )
+            finish()
         }
     }
 

@@ -97,7 +97,7 @@ fun MainScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                "ProxyBox",
+                "COOL-VPN",
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
                 color = C.TextPrimary,

@@ -93,6 +93,13 @@
     <string name="ip_check_title">IP Check — %s</string>
 
     <!-- Settings -->
+    <string name="group_account">ACCOUNT</string>
+    <string name="account">Konto COOL-VPN</string>
+    <string name="account_active">Aktywna sesja</string>
+    <string name="logout">Wyloguj</string>
+    <string name="logout_subtitle">Zakończ sesję i usuń konfigurację z urządzenia</string>
+    <string name="logout_confirm_title">Wylogować z COOL-VPN?</string>
+    <string name="logout_confirm_message">Sesja zostanie zakończona, a pobrana konfiguracja VPN zostanie usunięta z tego urządzenia.</string>
     <string name="settings">Settings</string>
     <string name="group_vpn">VPN</string>
     <string name="split_tunneling">Split Tunneling</string>
@@ -112,7 +119,7 @@
     <string name="update_geo">Update Geo Databases</string>
     <string name="update_geo_subtitle">geoip.dat · geosite.dat</string>
     <string name="group_about">ABOUT</string>
-    <string name="about_subtitle">v%s · Open-source VPN client</string>
+    <string name="about_subtitle">v%s · Bezpieczny klient VPN</string>
     <string name="github">GitHub</string>
     <string name="github_url">github.com/DaveBugg/ProxyBox</string>
     <string name="xray_core">Xray Core</string>
@@ -144,7 +151,7 @@
     <string name="notif_connected">ProxyBox — Connected</string>
 
     <!-- TV -->
-    <string name="tv_title">ProxyBox TV</string>
+    <string name="tv_title">COOL-VPN TV</string>
     <string name="select_profile">Select Profile</string>
     <string name="no_profiles_tv">No profiles. Click Add Config.</string>
     <string name="add_config_phone">Add Config via Phone</string>

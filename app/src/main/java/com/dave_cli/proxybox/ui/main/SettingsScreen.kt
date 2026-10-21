@@ -43,6 +43,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.ui.unit.sp
 import com.dave_cli.proxybox.BuildConfig
+import com.dave_cli.proxybox.auth.CoolVpnApi
 import com.dave_cli.proxybox.R
 import com.dave_cli.proxybox.core.GeoProfile
 import com.dave_cli.proxybox.core.LocaleHelper
@@ -55,6 +56,7 @@ fun SettingsScreen(
     onBack: () -> Unit,
     onOpenSplitTunnel: () -> Unit = {},
     onLanguageChanged: () -> Unit = {},
+    onLogout: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val isUpdatingGeo by viewModel.isUpdatingGeo.collectAsState()
@@ -66,6 +68,8 @@ fun SettingsScreen(
     var updateResult by remember { mutableStateOf<UpdateResult?>(null) }
     var showGeoProfileDialog by remember { mutableStateOf(false) }
     var showUaDialog by remember { mutableStateOf(false) }
+    var showLogoutDialog by remember { mutableStateOf(false) }
+    val accountName = remember { CoolVpnApi(context).username() }
 
     Column(
         modifier = Modifier
@@ -93,6 +97,25 @@ fun SettingsScreen(
             Spacer(Modifier.width(8.dp))
             Text(stringResource(R.string.settings), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = C.TextPrimary)
         }
+
+        // ACCOUNT
+        GroupLabel(stringResource(R.string.group_account))
+
+        SettingsItem(
+            icon = "\uD83D\uDC64",
+            iconColor = C.Primary,
+            title = stringResource(R.string.account),
+            subtitle = if (accountName.isBlank()) stringResource(R.string.account_active) else accountName,
+            showArrow = false,
+        )
+
+        SettingsItem(
+            icon = "\u21AA",
+            iconColor = Color(0xFFFF7070),
+            title = stringResource(R.string.logout),
+            subtitle = stringResource(R.string.logout_subtitle),
+            onClick = { showLogoutDialog = true },
+        )
 
         // VPN
         GroupLabel(stringResource(R.string.group_vpn))
@@ -181,7 +204,7 @@ fun SettingsScreen(
         SettingsItem(
             icon = "\u25C6",
             iconColor = C.Primary,
-            title = "ProxyBox",
+            title = "COOL-VPN",
             subtitle = stringResource(R.string.about_subtitle, BuildConfig.VERSION_NAME),
             showArrow = false,
         )
@@ -217,6 +240,27 @@ fun SettingsScreen(
             title = stringResource(R.string.license),
             subtitle = stringResource(R.string.license_value),
             showArrow = false,
+        )
+    }
+
+    if (showLogoutDialog) {
+        AlertDialog(
+            onDismissRequest = { showLogoutDialog = false },
+            title = { Text(stringResource(R.string.logout_confirm_title), color = C.TextPrimary) },
+            text = { Text(stringResource(R.string.logout_confirm_message), color = C.TextSecondary) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showLogoutDialog = false
+                    onLogout()
+                }) {
+                    Text(stringResource(R.string.logout), color = Color(0xFFFF7070))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLogoutDialog = false }) {
+                    Text(stringResource(R.string.cancel), color = C.TextPrimary)
+                }
+            },
         )
     }
 

@@ -144,6 +144,12 @@ class ProfileRepository(db: AppDatabase) {
         }
     }
 
+    suspend fun clearCoolVpnSubscription() = withContext(Dispatchers.IO) {
+        val id = "coolvpn-account"
+        profileDao.deleteBySubscription(id)
+        subscriptionDao.getById(id)?.let { subscriptionDao.delete(it) }
+    }
+
     suspend fun addSubscription(name: String, url: String, userAgent: String = ""): Boolean = withContext(Dispatchers.IO) {
         val sub = SubscriptionEntity(
             id = UUID.randomUUID().toString(),
