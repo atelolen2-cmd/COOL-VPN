@@ -40,10 +40,13 @@
             android:name=".auth.LoginActivity"
             android:exported="true"
             android:label="@string/app_name"
-            android:theme="@style/Theme.ProxyBox">
+            android:theme="@style/Theme.ProxyBox"
+            android:windowSoftInputMode="adjustResize|stateAlwaysHidden"
+            android:banner="@drawable/tv_banner">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity>
 
@@ -58,14 +61,9 @@
         <activity
             android:name=".ui.tv.TvMainActivity"
             android:banner="@drawable/tv_banner"
-            android:exported="true"
+            android:exported="false"
             android:label="@string/app_name"
-            android:theme="@style/Theme.ProxyBox.TV">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
-            </intent-filter>
-        </activity>
+            android:theme="@style/Theme.ProxyBox.TV" />
 
         <!-- Add profile activity -->
         <activity

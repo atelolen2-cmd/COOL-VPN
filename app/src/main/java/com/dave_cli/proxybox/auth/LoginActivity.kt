@@ -14,12 +14,15 @@ import android.view.Gravity
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.ScrollView
 import android.widget.TextView
 import androidx.activity.ComponentActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import com.dave_cli.proxybox.R
 import com.dave_cli.proxybox.data.db.AppDatabase
@@ -51,6 +54,7 @@ class LoginActivity : ComponentActivity() {
         api = CoolVpnApi(this)
         window.statusBarColor = bg
         window.navigationBarColor = bg
+        window.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE or android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN)
         showLogin()
         if (api.hasSession()) refreshExistingSession()
     }
@@ -67,19 +71,25 @@ class LoginActivity : ComponentActivity() {
             setPadding(dp(24), dp(28), dp(24), dp(22))
         }
 
+        // Keep the focused field visible when the software keyboard opens.
+        ViewCompat.setOnApplyWindowInsetsListener(scroll) { view, insets ->
+            val imeBottom = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
+            view.setPadding(view.paddingLeft, view.paddingTop, view.paddingRight, imeBottom)
+            insets
+        }
+
         val topSpace = View(this)
         root.addView(topSpace, LinearLayout.LayoutParams(1, 0, 0.12f))
 
-        val logo = TextView(this).apply {
-            text = "C"
-            gravity = Gravity.CENTER
-            textSize = 34f
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
-            setTextColor(Color.WHITE)
-            background = gradient(violet, violet2, 100f)
+        val logo = ImageView(this).apply {
+            setImageResource(R.drawable.coolvpn_logo)
+            scaleType = ImageView.ScaleType.CENTER_CROP
+            contentDescription = "COOL-VPN"
+            background = rounded(Color.rgb(3, 12, 35), 22f)
             elevation = dp(8).toFloat()
+            clipToOutline = true
         }
-        root.addView(logo, LinearLayout.LayoutParams(dp(78), dp(78)).apply { bottomMargin = dp(18) })
+        root.addView(logo, LinearLayout.LayoutParams(dp(96), dp(96)).apply { bottomMargin = dp(16) })
 
         val title = TextView(this).apply {
             text = "COOL-VPN"
@@ -119,6 +129,7 @@ class LoginActivity : ComponentActivity() {
 
         username = field("Login", false)
         panel.addView(username, LinearLayout.LayoutParams(-1, dp(56)).apply { bottomMargin = dp(12) })
+        username.setOnFocusChangeListener { v, hasFocus -> if (hasFocus) ensureVisible(scroll, v) }
 
         val passwordContainer = FrameLayout(this)
         password = field("Hasło", true).apply {
@@ -142,6 +153,7 @@ class LoginActivity : ComponentActivity() {
         }
         passwordContainer.addView(toggle, FrameLayout.LayoutParams(dp(68), dp(56), Gravity.END))
         panel.addView(passwordContainer, LinearLayout.LayoutParams(-1, dp(56)).apply { bottomMargin = dp(18) })
+        password.setOnFocusChangeListener { v, hasFocus -> if (hasFocus) ensureVisible(scroll, v) }
 
         loginButton = TextView(this).apply {
             text = "ZALOGUJ SIĘ"
@@ -203,6 +215,21 @@ class LoginActivity : ComponentActivity() {
         else InputType.TYPE_CLASS_TEXT
         if (secret) transformationMethod = PasswordTransformationMethod.getInstance()
         isFocusableInTouchMode = true
+    }
+
+
+    private fun ensureVisible(scroll: ScrollView, target: View) {
+        target.postDelayed({
+            val rect = android.graphics.Rect()
+            target.getDrawingRect(rect)
+            scroll.offsetDescendantRectToMyCoords(target, rect)
+            val visibleBottom = scroll.height - scroll.paddingBottom - dp(24)
+            val visibleTop = scroll.paddingTop + dp(12)
+            when {
+                rect.bottom > visibleBottom -> scroll.smoothScrollBy(0, rect.bottom - visibleBottom)
+                rect.top < visibleTop -> scroll.smoothScrollBy(0, rect.top - visibleTop)
+            }
+        }, 180)
     }
 
     private fun doLogin() {

@@ -25,6 +25,10 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import android.content.Context
 import com.dave_cli.proxybox.R
+import com.dave_cli.proxybox.auth.CoolVpnApi
+import com.dave_cli.proxybox.data.db.AppDatabase
+import com.dave_cli.proxybox.data.repository.ProfileRepository
+import com.dave_cli.proxybox.auth.LoginActivity
 import com.dave_cli.proxybox.core.CoreService
 import com.dave_cli.proxybox.core.GeoProfile
 import com.dave_cli.proxybox.core.LocaleHelper
@@ -111,6 +115,21 @@ class TvMainActivity : FragmentActivity() {
                     binding.btnTestConnection.text = getString(R.string.test_connection)
                 }, 4000)
             }
+        }
+
+        binding.btnLogout.setOnClickListener {
+            AlertDialog.Builder(this)
+                .setTitle(getString(R.string.logout_confirm_title))
+                .setMessage(getString(R.string.logout_confirm_message))
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton(getString(R.string.logout)) { _, _ ->
+                    startService(Intent(this, CoreService::class.java).apply { action = CoreService.ACTION_STOP })
+                    CoolVpnApi(this).clearSession()
+                    ProfileRepository(AppDatabase.getInstance(applicationContext)).clearCoolVpnSubscription()
+                    startActivity(Intent(this, LoginActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK))
+                    finish()
+                }
+                .show()
         }
 
         setupPresetSpinner()

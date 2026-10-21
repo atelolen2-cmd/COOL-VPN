@@ -1,4 +1,16 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" enco
+                <Button
+                    android:id="@+id/btnLogout"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="14dp"
+                    android:text="@string/logout"
+                    android:textSize="13sp"
+                    android:background="@drawable/tv_btn_focus"
+                    android:textColor="#FF7070"
+                    android:focusable="true"
+                    android:nextFocusLeft="@id/lvProfiles"/>
+ding="utf-8"?>
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
