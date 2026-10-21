@@ -125,7 +125,9 @@ class TvMainActivity : FragmentActivity() {
                 .setPositiveButton(getString(R.string.logout)) { _, _ ->
                     startService(Intent(this, CoreService::class.java).apply { action = CoreService.ACTION_STOP })
                     CoolVpnApi(this).clearSession()
+                    lifecycleScope.launch {
                     ProfileRepository(AppDatabase.getInstance(applicationContext)).clearCoolVpnSubscription()
+                    }
                     startActivity(Intent(this, LoginActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK))
                     finish()
                 }
