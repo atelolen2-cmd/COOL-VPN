@@ -1,6 +1,8 @@
 package com.dave_cli.proxybox.auth
 
 import android.content.Context
+import android.provider.Settings
+import java.util.UUID
 import com.dave_cli.proxybox.BuildConfig
 import com.google.gson.Gson
 import com.google.gson.JsonObject
@@ -12,7 +14,29 @@ import java.util.concurrent.TimeUnit
 
 /** COOL-VPN authentication gateway client. The 3x-ui Sub ID never lives in the APK. */
 class CoolVpnApi(context: Context) {
-    private val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+    private val appContext = context.applicationContext
+    private val prefs = appContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+
+    private fun deviceHwid(): String {
+        val stored = prefs.getString(KEY_HWID, null)
+        if (!stored.isNullOrBlank()) return stored
+
+        val androidId = runCatching {
+            Settings.Secure.getString(
+                appContext.contentResolver,
+                Settings.Secure.ANDROID_ID
+            )
+        }.getOrNull()?.trim().orEmpty()
+
+        val hwid = if (androidId.isNotBlank()) {
+            "android-$androidId"
+        } else {
+            "coolvpn-${UUID.randomUUID()}"
+        }
+
+        prefs.edit().putString(KEY_HWID, hwid).apply()
+        return hwid
+    }
     private val gson = Gson()
     private val client = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)
@@ -22,7 +46,7 @@ class CoolVpnApi(context: Context) {
     data class Result(val ok: Boolean, val username: String? = null, val subscription: String? = null, val expiresAt: String? = null, val error: String? = null)
 
     fun login(username: String, password: String): Result {
-        val payload = gson.toJson(mapOf("username" to username, "password" to password))
+        val payload = gson.toJson(mapOf("username" to username, "password" to password, "hwid" to deviceHwid()))
         return request("/v1/login", "POST", payload, null)
     }
 
@@ -109,7 +133,7 @@ class CoolVpnApi(context: Context) {
 
     fun loginAndSave(username: String, password: String): Result {
         return try {
-            val payload = gson.toJson(mapOf("username" to username, "password" to password))
+            val payload = gson.toJson(mapOf("username" to username, "password" to password, "hwid" to deviceHwid()))
             val url = BuildConfig.COOLVPN_API_BASE_URL.trimEnd('/') + "/v1/login"
             val request = Request.Builder()
                 .url(url)
@@ -137,5 +161,6 @@ class CoolVpnApi(context: Context) {
         private const val KEY_TOKEN = "token"
         private const val KEY_USERNAME = "username"
         private const val KEY_EXPIRES_AT = "expiresAt"
+        private const val KEY_HWID = "hwid"
     }
 }
