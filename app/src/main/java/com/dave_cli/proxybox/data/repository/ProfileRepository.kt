@@ -7,6 +7,7 @@ import com.dave_cli.proxybox.data.db.SubscriptionEntity
 import com.dave_cli.proxybox.core.RoutingRuleValidator
 import com.dave_cli.proxybox.import_config.ConfigParser
 import com.dave_cli.proxybox.import_config.SubscriptionParser
+import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import kotlinx.coroutines.Dispatchers
@@ -179,6 +180,7 @@ class ProfileRepository(db: AppDatabase) {
             subscriptionDao.updateMeta(subId, System.currentTimeMillis(), profiles.size)
             true
         } catch (e: Exception) {
+            Log.e("COOLVPN_IMPORT", "Import subskrypcji: ${e::class.java.name}: ${e.message}", e)
             false
         }
     }
