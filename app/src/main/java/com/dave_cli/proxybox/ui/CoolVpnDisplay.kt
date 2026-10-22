@@ -5,7 +5,10 @@ import com.dave_cli.proxybox.data.db.ProfileEntity
 object CoolVpnDisplay {
     fun countryFlag(profile: ProfileEntity): String {
         val text = "${profile.name} ${profile.rawUri}".lowercase()
+        val ip = Regex("(?<![0-9])(?:[0-9]{1,3}\\.){3}[0-9]{1,3}(?![0-9])").find(text)?.value
         return when {
+            ip in setOf("57.128.154.164", "57.129.160.131") -> "🇬🇧"
+            ip in setOf("51.83.145.73", "146.59.103.39") -> "🇵🇱"
             hasAny(text, "united kingdom", "uk", "england", "great britain", "wielka brytania", "anglia") -> "🇬🇧"
             hasAny(text, "poland", "pl", "polska") -> "🇵🇱"
             hasAny(text, "germany", "deutschland", "de", "niemcy", "niemie") -> "🇩🇪"

@@ -138,6 +138,7 @@ class LoginActivity : ComponentActivity() {
         passwordContainer.addView(password, FrameLayout.LayoutParams(-1, dp(56)))
 
         val toggle = TextView(this).apply {
+            id = View.generateViewId()
             text = "Pokaż"
             setTextColor(Color.rgb(167, 143, 255))
             textSize = 13f
@@ -145,6 +146,7 @@ class LoginActivity : ComponentActivity() {
             setPadding(dp(8), 0, dp(14), 0)
             background = getDrawable(R.drawable.coolvpn_show_focus)
             isFocusable = true
+            isFocusableInTouchMode = true
             isClickable = true
             setOnClickListener {
                 val visible = password.transformationMethod is HideReturnsTransformationMethod
@@ -159,6 +161,7 @@ class LoginActivity : ComponentActivity() {
         password.setOnFocusChangeListener { v, hasFocus -> if (hasFocus) ensureVisible(scroll, v) }
 
         loginButton = TextView(this).apply {
+            id = View.generateViewId()
             text = "ZALOGUJ SIĘ"
             setTextColor(Color.WHITE)
             textSize = 15f
@@ -167,9 +170,26 @@ class LoginActivity : ComponentActivity() {
             background = getDrawable(R.drawable.coolvpn_login_focus)
             isClickable = true
             isFocusable = true
+            isFocusableInTouchMode = true
             setOnClickListener { doLogin() }
         }
+        password.nextFocusDownId = toggle.id
+        toggle.nextFocusUpId = password.id
+        toggle.nextFocusDownId = loginButton.id
+        loginButton.nextFocusUpId = toggle.id
         panel.addView(loginButton, LinearLayout.LayoutParams(-1, dp(54)))
+
+        toggle.setOnFocusChangeListener { view, focused ->
+            view.scaleX = if (focused) 1.04f else 1f
+            view.scaleY = if (focused) 1.04f else 1f
+            view.elevation = if (focused) dp(8).toFloat() else 0f
+            view.alpha = if (focused) 1f else 0.9f
+        }
+        loginButton.setOnFocusChangeListener { view, focused ->
+            view.scaleX = if (focused) 1.025f else 1f
+            view.scaleY = if (focused) 1.025f else 1f
+            view.elevation = if (focused) dp(10).toFloat() else 0f
+        }
 
         progress = ProgressBar(this).apply {
             visibility = View.GONE

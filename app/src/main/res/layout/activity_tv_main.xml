@@ -104,7 +104,9 @@
                     android:background="@drawable/tv_connect_focus"
                     android:textColor="#FFF"
                     android:focusable="true"
-                    android:nextFocusLeft="@id/lvProfiles"/>
+                    android:nextFocusLeft="@id/lvProfiles"
+                    android:nextFocusDown="@id/btnAddConfig"
+                    android:focusableInTouchMode="true"/>
 
                 <Button
                     android:id="@+id/btnAddConfig"

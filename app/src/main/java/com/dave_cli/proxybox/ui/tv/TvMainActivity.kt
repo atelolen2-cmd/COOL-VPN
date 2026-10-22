@@ -103,6 +103,12 @@ class TvMainActivity : FragmentActivity() {
         binding.btnConnect.setOnClickListener {
             if (CoreService.isActive) stopVpn() else requestVpnPermission()
         }
+        binding.btnConnect.setOnFocusChangeListener { view, focused ->
+            view.scaleX = if (focused) 1.035f else 1f
+            view.scaleY = if (focused) 1.035f else 1f
+            view.elevation = if (focused) 12f else 0f
+        }
+        binding.btnConnect.post { binding.btnConnect.requestFocus() }
 
         binding.btnAddConfig.setOnClickListener {
             startActivity(Intent(this, LocalServerActivity::class.java))
