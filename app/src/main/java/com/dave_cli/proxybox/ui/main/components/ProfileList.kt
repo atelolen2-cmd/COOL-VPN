@@ -41,6 +41,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.sp
 import com.dave_cli.proxybox.R
 import com.dave_cli.proxybox.data.db.ProfileEntity
+import com.dave_cli.proxybox.ui.CoolVpnDisplay
 import com.dave_cli.proxybox.ui.main.theme.C
 
 @Composable
@@ -149,7 +150,10 @@ private fun ProfileCard(
         // Info
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = profile.name,
+                text = run {
+                    val flag = CoolVpnDisplay.countryFlag(profile)
+                    if (flag.isNotEmpty()) "$flag  ${profile.name}" else profile.name
+                },
                 color = C.TextPrimary,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,

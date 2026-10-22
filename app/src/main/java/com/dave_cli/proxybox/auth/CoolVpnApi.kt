@@ -19,7 +19,7 @@ class CoolVpnApi(context: Context) {
         .readTimeout(30, TimeUnit.SECONDS)
         .build()
 
-    data class Result(val ok: Boolean, val username: String? = null, val subscription: String? = null, val error: String? = null)
+    data class Result(val ok: Boolean, val username: String? = null, val subscription: String? = null, val expiresAt: String? = null, val error: String? = null)
 
     fun login(username: String, password: String): Result {
         val payload = gson.toJson(mapOf("username" to username, "password" to password))
@@ -28,7 +28,11 @@ class CoolVpnApi(context: Context) {
 
     fun refresh(): Result {
         val token = prefs.getString(KEY_TOKEN, null) ?: return Result(false, error = "Brak sesji")
-        return request("/v1/config", "GET", null, token)
+        val result = request("/v1/config", "GET", null, token)
+        if (result.ok) {
+            prefs.edit().putString(KEY_EXPIRES_AT, result.expiresAt.orEmpty()).apply()
+        }
+        return result
     }
 
     fun saveSession(username: String, token: String) {
@@ -36,12 +40,41 @@ class CoolVpnApi(context: Context) {
     }
 
     fun clearSession() {
-        prefs.edit().remove(KEY_USERNAME).remove(KEY_TOKEN).apply()
+        prefs.edit().remove(KEY_USERNAME).remove(KEY_TOKEN).remove(KEY_EXPIRES_AT).apply()
     }
 
     fun hasSession(): Boolean = !prefs.getString(KEY_TOKEN, null).isNullOrBlank()
 
     fun username(): String = prefs.getString(KEY_USERNAME, "") ?: ""
+
+    fun subscriptionExpiry(): String? = prefs.getString(KEY_EXPIRES_AT, null)
+
+    fun subscriptionExpiryLabel(): String {
+        val raw = subscriptionExpiry().orEmpty().trim()
+        if (raw.isEmpty()) return "DOŻYWOTNIO"
+        return formatExpiry(raw)
+    }
+
+    private fun formatExpiry(raw: String): String {
+        val patterns = listOf(
+            "yyyy-MM-dd'T'HH:mm:ss.SSSX",
+            "yyyy-MM-dd'T'HH:mm:ssX",
+            "yyyy-MM-dd HH:mm:ss",
+            "yyyy-MM-dd"
+        )
+        for (pattern in patterns) {
+            try {
+                val parser = java.text.SimpleDateFormat(pattern, java.util.Locale.US)
+                parser.isLenient = false
+                val date = parser.parse(raw)
+                if (date != null) {
+                    return java.text.SimpleDateFormat("dd.MM.yyyy", java.util.Locale.getDefault()).format(date)
+                }
+            } catch (_: Exception) {
+            }
+        }
+        return raw
+    }
 
     private fun request(path: String, method: String, body: String?, token: String?): Result {
         return try {
@@ -61,6 +94,7 @@ class CoolVpnApi(context: Context) {
                     ok = true,
                     username = obj.get("username")?.asString,
                     subscription = obj.get("subscription")?.asString,
+                    expiresAt = obj.get("expiresAt")?.asString,
                     error = null
                 ).also {
                     if (obj.has("token") && obj.get("token").isJsonPrimitive) {
@@ -90,7 +124,8 @@ class CoolVpnApi(context: Context) {
                 val token = obj.get("token")?.asString ?: return Result(false, error = "Serwer nie zwrócił sesji")
                 val user = obj.get("username")?.asString ?: username
                 saveSession(user, token)
-                Result(true, user, obj.get("subscription")?.asString, null)
+                prefs.edit().putString(KEY_EXPIRES_AT, obj.get("expiresAt")?.asString.orEmpty()).apply()
+                Result(true, user, obj.get("subscription")?.asString, obj.get("expiresAt")?.asString, null)
             }
         } catch (e: Exception) {
             Result(false, error = e.message ?: "Nie można połączyć z serwerem COOL-VPN")
@@ -101,5 +136,6 @@ class CoolVpnApi(context: Context) {
         private const val PREFS = "coolvpn_auth"
         private const val KEY_TOKEN = "token"
         private const val KEY_USERNAME = "username"
+        private const val KEY_EXPIRES_AT = "expiresAt"
     }
 }

@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.sp
 import com.dave_cli.proxybox.R
+import com.dave_cli.proxybox.auth.CoolVpnApi
 import com.dave_cli.proxybox.core.CoreService
 import com.dave_cli.proxybox.core.CoreService.VpnState
 import com.dave_cli.proxybox.data.db.ProfileEntity
@@ -113,6 +114,14 @@ fun MainScreen(
                 Text("\u2699", fontSize = 16.sp, color = C.Primary)
             }
         }
+
+        // Subscription status
+        Text(
+            text = "Subskrypcja: ${CoolVpnApi(context).subscriptionExpiryLabel()}",
+            color = C.TextSecondary,
+            fontSize = 11.sp,
+            modifier = Modifier.padding(start = 24.dp, top = 4.dp, bottom = 2.dp)
+        )
 
         // Connect button
         ConnectSection(

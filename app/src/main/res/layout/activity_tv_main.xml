@@ -14,7 +14,16 @@
         android:textColor="#E0E0FF"
         android:textSize="28sp"
         android:textStyle="bold"
-        android:layout_marginBottom="16dp"/>
+        android:layout_marginBottom="4dp"/>
+
+    <TextView
+        android:id="@+id/tvSubscriptionExpiry"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/coolvpn_subscription_lifetime"
+        android:textColor="#AAAACC"
+        android:textSize="13sp"
+        android:layout_marginBottom="12dp"/>
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -92,7 +101,7 @@
                     android:text="@string/connect"
                     android:textSize="18sp"
                     android:layout_marginBottom="10dp"
-                    android:backgroundTint="#7C6FFF"
+                    android:background="@drawable/tv_connect_focus"
                     android:textColor="#FFF"
                     android:focusable="true"
                     android:nextFocusLeft="@id/lvProfiles"/>

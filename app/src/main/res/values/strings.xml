@@ -14,6 +14,8 @@
     <string name="coolvpn_login_error">Nieprawidłowy login lub hasło</string>
     <string name="coolvpn_connection_error">Nie można połączyć z serwerem COOL-VPN</string>
     <string name="coolvpn_loading">Pobieranie konfiguracji…</string>
+    <string name="coolvpn_subscription_date">Subskrypcja: %s</string>
+    <string name="coolvpn_subscription_lifetime">Subskrypcja: DOŻYWOTNIO</string>
 
     <!-- Common -->
     <string name="save">Save</string>

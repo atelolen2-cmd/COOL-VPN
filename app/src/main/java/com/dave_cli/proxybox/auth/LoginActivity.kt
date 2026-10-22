@@ -143,6 +143,9 @@ class LoginActivity : ComponentActivity() {
             textSize = 13f
             gravity = Gravity.CENTER
             setPadding(dp(8), 0, dp(14), 0)
+            background = getDrawable(R.drawable.coolvpn_show_focus)
+            isFocusable = true
+            isClickable = true
             setOnClickListener {
                 val visible = password.transformationMethod is HideReturnsTransformationMethod
                 password.transformationMethod = if (visible) PasswordTransformationMethod.getInstance()
@@ -161,7 +164,7 @@ class LoginActivity : ComponentActivity() {
             textSize = 15f
             setTypeface(typeface, android.graphics.Typeface.BOLD)
             gravity = Gravity.CENTER
-            background = gradient(violet, violet2, 16f)
+            background = getDrawable(R.drawable.coolvpn_login_focus)
             isClickable = true
             isFocusable = true
             setOnClickListener { doLogin() }

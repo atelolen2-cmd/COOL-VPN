@@ -9,6 +9,7 @@ import android.widget.ArrayAdapter
 import android.widget.TextView
 import com.dave_cli.proxybox.R
 import com.dave_cli.proxybox.data.db.ProfileEntity
+import com.dave_cli.proxybox.ui.CoolVpnDisplay
 
 class TvProfileAdapter(
     context: Context,
@@ -21,7 +22,8 @@ class TvProfileAdapter(
             .inflate(R.layout.item_tv_profile, parent, false)
         val item = getItem(position) ?: return view
 
-        view.findViewById<TextView>(R.id.tvName).text = item.name
+        val flag = CoolVpnDisplay.countryFlag(item)
+        view.findViewById<TextView>(R.id.tvName).text = if (flag.isNotEmpty()) "$flag  ${item.name}" else item.name
         view.findViewById<TextView>(R.id.tvProtocol).text = item.protocol.uppercase()
 
         val tvLatency = view.findViewById<TextView>(R.id.tvLatency)

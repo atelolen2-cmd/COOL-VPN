@@ -74,6 +74,13 @@ class TvMainActivity : FragmentActivity() {
 
         viewModel = ViewModelProvider(this)[MainViewModel::class.java]
 
+        val expiryLabel = CoolVpnApi(this).subscriptionExpiryLabel()
+        binding.tvSubscriptionExpiry.text = if (expiryLabel == "DOŻYWOTNIO") {
+            getString(R.string.coolvpn_subscription_lifetime)
+        } else {
+            getString(R.string.coolvpn_subscription_date, expiryLabel)
+        }
+
         adapter = TvProfileAdapter(
             context = this,
             onClick = { profile ->

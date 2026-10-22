@@ -181,4 +181,6 @@
     <string name="test_http_error">HTTP %1$d — %2$dмс</string>
     <string name="test_fail">ОШИБКА — %s</string>
     <string name="no_profile_selected">Профиль не выбран</string>
+    <string name="coolvpn_subscription_date">Подписка: %s</string>
+    <string name="coolvpn_subscription_lifetime">Подписка: БЕССРОЧНО</string>
 </resources>
