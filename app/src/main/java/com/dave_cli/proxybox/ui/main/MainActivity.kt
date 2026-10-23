@@ -141,7 +141,23 @@ class MainActivity : ComponentActivity() {
             } // CompositionLocalProvider
         }
     }
+override fun onResume() {
+    super.onResume()
 
+    lifecycleScope.launch(Dispatchers.IO) {
+        val api = CoolVpnApi(this@MainActivity)
+
+        if (!api.hasSession()) return@launch
+
+        val result = api.refresh()
+
+        if (result.ok && !result.subscription.isNullOrBlank()) {
+            ProfileRepository(
+                AppDatabase.getInstance(applicationContext)
+            ).importCoolVpnSubscription(result.subscription!!)
+        }
+    }
+}
     private fun showNameRuleDialogFromFile(json: String) {
         // File picker returned JSON. We add it with a default name since the
         // Compose RulesDialog handles naming internally for URL imports.
