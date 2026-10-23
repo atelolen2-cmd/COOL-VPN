@@ -61,7 +61,7 @@ class LoginActivity : ComponentActivity() {
 }
 
 showLogin()
-
+    }
     private fun showLogin() {
         val scroll = ScrollView(this).apply {
             setBackgroundColor(bg)
