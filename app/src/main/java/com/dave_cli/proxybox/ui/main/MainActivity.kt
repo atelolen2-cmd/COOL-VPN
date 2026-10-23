@@ -60,14 +60,26 @@ class MainActivity : ComponentActivity() {
     ) { uri ->
         if (uri != null) {
             try {
-                val json = contentResolver.openInputStream(uri)?.bufferedReader()?.readText()
+                val json = contentResolver
+                    .openInputStream(uri)
+                    ?.bufferedReader()
+                    ?.readText()
+
                 if (!json.isNullOrEmpty()) {
                     onRuleFileResult?.invoke(json)
                 }
             } catch (e: Exception) {
-                Toast.makeText(this, getString(R.string.error_reading_file, e.message ?: ""), Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    this,
+                    getString(
+                        R.string.error_reading_file,
+                        e.message ?: ""
+                    ),
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
+
         onRuleFileResult = null
     }
 
@@ -87,81 +99,181 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             var localeVersion by remember { mutableIntStateOf(0) }
+
             val localizedContext = remember(localeVersion) {
                 LocaleHelper.applyLocaleToActivity(this@MainActivity)
                 LocaleHelper.applyLocale(this@MainActivity)
             }
 
-            CompositionLocalProvider(LocalContext provides localizedContext) {
-            ProxyBoxTheme {
-            val vpnState by CoreService.vpnState.collectAsState()
-            var showSettings by remember { mutableStateOf(false) }
-            var showSplitTunnel by remember { mutableStateOf(false) }
+            CompositionLocalProvider(
+                LocalContext provides localizedContext
+            ) {
+                ProxyBoxTheme {
 
-            if (showSplitTunnel) {
-                SplitTunnelScreen(
-                    viewModel = viewModel,
-                    onBack = { showSplitTunnel = false },
-                    onReconnect = { reconnectIfActive() },
-                )
-            } else if (showSettings) {
-                SettingsScreen(
-                    viewModel = viewModel,
-                    onBack = { showSettings = false },
-                    onOpenSplitTunnel = { showSplitTunnel = true },
-                    onLanguageChanged = { localeVersion++ },
-                    onLogout = { logoutAndReturnToLogin() },
-                )
-            } else {
-                MainScreen(
-                    viewModel = viewModel,
-                    vpnState = vpnState,
-                    onConnectToggle = {
-                        if (CoreService.isActive) stopVpn() else requestVpnPermission()
-                    },
-                    onAddProfile = {
-                        startActivity(Intent(this@MainActivity, AddProfileActivity::class.java))
-                    },
-                    onOpenSettings = { showSettings = true },
-                    onPickRuleFile = {
-                        onRuleFileResult = { json ->
-                            showNameRuleDialogFromFile(json)
-                        }
-                        try {
-                            ruleFileLauncher.launch(arrayOf("*/*"))
-                        } catch (e: Exception) {
-                            Toast.makeText(this@MainActivity, getString(R.string.no_file_manager), Toast.LENGTH_SHORT).show()
-                        }
-                    },
-                    onReconnect = { reconnectIfActive() },
-                    onOpenSplitTunnel = { showSplitTunnel = true },
-                )
+                    val vpnState by CoreService.vpnState.collectAsState()
+
+                    var showSettings by remember {
+                        mutableStateOf(false)
+                    }
+
+                    var showSplitTunnel by remember {
+                        mutableStateOf(false)
+                    }
+
+                    if (showSplitTunnel) {
+
+                        SplitTunnelScreen(
+                            viewModel = viewModel,
+                            onBack = {
+                                showSplitTunnel = false
+                            },
+                            onReconnect = {
+                                reconnectIfActive()
+                            },
+                        )
+
+                    } else if (showSettings) {
+
+                        SettingsScreen(
+                            viewModel = viewModel,
+                            onBack = {
+                                showSettings = false
+                            },
+                            onOpenSplitTunnel = {
+                                showSplitTunnel = true
+                            },
+                            onLanguageChanged = {
+                                localeVersion++
+                            },
+                            onLogout = {
+                                logoutAndReturnToLogin()
+                            },
+                        )
+
+                    } else {
+
+                        MainScreen(
+                            viewModel = viewModel,
+                            vpnState = vpnState,
+
+                            onConnectToggle = {
+                                if (CoreService.isActive) {
+                                    stopVpn()
+                                } else {
+                                    requestVpnPermission()
+                                }
+                            },
+
+                            onAddProfile = {
+                                startActivity(
+                                    Intent(
+                                        this@MainActivity,
+                                        AddProfileActivity::class.java
+                                    )
+                                )
+                            },
+
+                            onOpenSettings = {
+                                showSettings = true
+                            },
+
+                            onPickRuleFile = {
+                                onRuleFileResult = { json ->
+                                    showNameRuleDialogFromFile(json)
+                                }
+
+                                try {
+                                    ruleFileLauncher.launch(
+                                        arrayOf("*/*")
+                                    )
+                                } catch (e: Exception) {
+                                    Toast.makeText(
+                                        this@MainActivity,
+                                        getString(R.string.no_file_manager),
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            },
+
+                            onReconnect = {
+                                reconnectIfActive()
+                            },
+
+                            onOpenSplitTunnel = {
+                                showSplitTunnel = true
+                            },
+                        )
+                    }
+                }
             }
-            } // ProxyBoxTheme
-            } // CompositionLocalProvider
         }
     }
-override fun onResume() {
-    super.onResume()
 
-    lifecycleScope.launch(Dispatchers.IO) {
-        val api = CoolVpnApi(this@MainActivity)
+    /**
+     * Automatyczne odświeżanie konfiguracji COOL-VPN.
+     *
+     * Uruchamia się:
+     * - po otwarciu aplikacji,
+     * - po powrocie z tła,
+     * - po powrocie z innego ekranu.
+     *
+     * Pobiera aktualną konfigurację z mastera i zapisuje ją
+     * do lokalnej bazy Room.
+     */
+    override fun onResume() {
+        super.onResume()
 
-        if (!api.hasSession()) return@launch
+        lifecycleScope.launch {
 
-        val result = api.refresh()
+            val result = withContext(Dispatchers.IO) {
+                CoolVpnApi(this@MainActivity).refresh()
+            }
 
-        if (result.ok && !result.subscription.isNullOrBlank()) {
-            ProfileRepository(
-                AppDatabase.getInstance(applicationContext)
-            ).importCoolVpnSubscription(result.subscription!!)
+            if (!result.ok) {
+                Toast.makeText(
+                    this@MainActivity,
+                    "COOL-VPN: nie udało się odświeżyć konfiguracji: ${
+                        result.error ?: "nieznany błąd"
+                    }",
+                    Toast.LENGTH_LONG
+                ).show()
+
+                return@launch
+            }
+
+            val subscription = result.subscription
+
+            if (subscription.isNullOrBlank()) {
+                Toast.makeText(
+                    this@MainActivity,
+                    "COOL-VPN: master nie zwrócił konfiguracji.",
+                    Toast.LENGTH_LONG
+                ).show()
+
+                return@launch
+            }
+
+            val imported = withContext(Dispatchers.IO) {
+                ProfileRepository(
+                    AppDatabase.getInstance(applicationContext)
+                ).importCoolVpnSubscription(subscription)
+            }
+
+            if (!imported) {
+                Toast.makeText(
+                    this@MainActivity,
+                    "COOL-VPN: pobrano konfigurację, ale nie udało się jej zapisać.",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
         }
     }
-}
+
     private fun showNameRuleDialogFromFile(json: String) {
         // File picker returned JSON. We add it with a default name since the
         // Compose RulesDialog handles naming internally for URL imports.
         // For file imports, prompt the user via an old-style dialog.
+
         val input = android.widget.EditText(this).apply {
             hint = getString(R.string.rule_name_hint)
             setTextColor(0xFFE0E0FF.toInt())
@@ -169,24 +281,48 @@ override fun onResume() {
             setBackgroundColor(0xFF2A2A4A.toInt())
             setPadding(32, 24, 32, 24)
         }
+
         val container = android.widget.FrameLayout(this).apply {
             setPadding(48, 24, 48, 0)
             addView(input)
         }
-        android.app.AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+
+        android.app.AlertDialog.Builder(
+            this,
+            android.R.style.Theme_DeviceDefault_Dialog_Alert
+        )
             .setTitle(getString(R.string.name_rule_set))
             .setView(container)
             .setPositiveButton(getString(R.string.save)) { _, _ ->
-                val name = input.text.toString().trim().ifEmpty { getString(R.string.default_rule_name) }
+
+                val name = input.text
+                    .toString()
+                    .trim()
+                    .ifEmpty {
+                        getString(R.string.default_rule_name)
+                    }
+
                 viewModel.addRoutingRule(name, json) { error ->
+
                     if (error == null) {
-                        Toast.makeText(this, getString(R.string.rule_added, name), Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            this,
+                            getString(R.string.rule_added, name),
+                            Toast.LENGTH_SHORT
+                        ).show()
                     } else {
-                        Toast.makeText(this, getString(R.string.rule_invalid, error), Toast.LENGTH_LONG).show()
+                        Toast.makeText(
+                            this,
+                            getString(R.string.rule_invalid, error),
+                            Toast.LENGTH_LONG
+                        ).show()
                     }
                 }
             }
-            .setNegativeButton(getString(R.string.cancel), null)
+            .setNegativeButton(
+                getString(R.string.cancel),
+                null
+            )
             .show()
     }
 
@@ -197,13 +333,24 @@ override fun onResume() {
     }
 
     private fun handleWidgetIntent(intent: Intent) {
-        if (intent.action == com.dave_cli.proxybox.widget.VpnWidgetProvider.ACTION_CONNECT) {
+
+        if (
+            intent.action ==
+            com.dave_cli.proxybox.widget.VpnWidgetProvider.ACTION_CONNECT
+        ) {
+
             if (!CoreService.isActive) {
+
                 pendingWidgetConnect = true
+
                 lifecycleScope.launch {
+
                     withTimeoutOrNull(3000) {
-                        viewModel.profiles.first { it.isNotEmpty() }
+                        viewModel.profiles.first {
+                            it.isNotEmpty()
+                        }
                     }
+
                     requestVpnPermission()
                 }
             }
@@ -211,28 +358,62 @@ override fun onResume() {
     }
 
     private fun isTV(): Boolean {
-        val uiMode = (getSystemService(UI_MODE_SERVICE) as UiModeManager).currentModeType
-        return uiMode == Configuration.UI_MODE_TYPE_TELEVISION
+
+        val uiMode =
+            (
+                getSystemService(UI_MODE_SERVICE)
+                    as UiModeManager
+                ).currentModeType
+
+        return uiMode ==
+            Configuration.UI_MODE_TYPE_TELEVISION
     }
 
     private fun requestVpnPermission() {
+
         val intent = VpnService.prepare(this)
-        if (intent != null) vpnPermLauncher.launch(intent) else startVpn()
+
+        if (intent != null) {
+            vpnPermLauncher.launch(intent)
+        } else {
+            startVpn()
+        }
     }
 
     private fun startVpn() {
+
         lifecycleScope.launch {
-            val selected = viewModel.profiles.value.firstOrNull { it.isSelected }
-                ?: viewModel.profiles.value.firstOrNull()
+
+            val selected =
+                viewModel.profiles.value.firstOrNull {
+                    it.isSelected
+                }
+                    ?: viewModel.profiles.value.firstOrNull()
+
             if (selected == null) {
-                Toast.makeText(this@MainActivity, "Add a profile first", Toast.LENGTH_SHORT).show()
+
+                Toast.makeText(
+                    this@MainActivity,
+                    "Add a profile first",
+                    Toast.LENGTH_SHORT
+                ).show()
+
                 return@launch
             }
-            if (!selected.isSelected) viewModel.selectProfile(selected.id)
-            val si = Intent(this@MainActivity, CoreService::class.java).apply {
+
+            if (!selected.isSelected) {
+                viewModel.selectProfile(selected.id)
+            }
+
+            val si = Intent(
+                this@MainActivity,
+                CoreService::class.java
+            ).apply {
                 action = CoreService.ACTION_START
             }
+
             startForegroundService(si)
+
             if (pendingWidgetConnect) {
                 pendingWidgetConnect = false
                 moveTaskToBack(true)
@@ -241,30 +422,59 @@ override fun onResume() {
     }
 
     private fun logoutAndReturnToLogin() {
-        if (CoreService.isActive) stopVpn()
+
+        if (CoreService.isActive) {
+            stopVpn()
+        }
+
         lifecycleScope.launch {
+
             withContext(Dispatchers.IO) {
-                CoolVpnApi(this@MainActivity).clearSession()
-                ProfileRepository(AppDatabase.getInstance(applicationContext)).clearCoolVpnSubscription()
+
+                CoolVpnApi(this@MainActivity)
+                    .clearSession()
+
+                ProfileRepository(
+                    AppDatabase.getInstance(applicationContext)
+                ).clearCoolVpnSubscription()
             }
+
             startActivity(
-                Intent(this@MainActivity, LoginActivity::class.java).addFlags(
-                    Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                Intent(
+                    this@MainActivity,
+                    LoginActivity::class.java
+                ).addFlags(
+                    Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_CLEAR_TASK
                 )
             )
+
             finish()
         }
     }
 
     private fun stopVpn() {
-        startService(Intent(this, CoreService::class.java).apply { action = CoreService.ACTION_STOP })
+
+        startService(
+            Intent(
+                this,
+                CoreService::class.java
+            ).apply {
+                action = CoreService.ACTION_STOP
+            }
+        )
     }
 
     private fun reconnectIfActive() {
+
         if (CoreService.isActive) {
+
             stopVpn()
+
             lifecycleScope.launch {
+
                 delay(500)
+
                 startVpn()
             }
         }
