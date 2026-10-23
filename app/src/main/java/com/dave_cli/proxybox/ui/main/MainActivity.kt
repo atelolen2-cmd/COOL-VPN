@@ -1,6 +1,5 @@
 package com.dave_cli.proxybox.ui.main
 
-import android.app.Activity
 import android.app.UiModeManager
 import android.content.Context
 import android.content.Intent
@@ -41,53 +40,73 @@ import kotlinx.coroutines.withTimeoutOrNull
 class MainActivity : ComponentActivity() {
 
     override fun attachBaseContext(newBase: Context) {
-        super.attachBaseContext(LocaleHelper.applyLocale(newBase))
+        super.attachBaseContext(
+            LocaleHelper.applyLocale(newBase)
+        )
     }
 
     private val viewModel: MainViewModel by viewModels()
+
     private var pendingWidgetConnect = false
 
-    private val vpnPermLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == RESULT_OK) startVpn()
-    }
-
-    private var onRuleFileResult: ((String) -> Unit)? = null
-
-    private val ruleFileLauncher = registerForActivityResult(
-        ActivityResultContracts.OpenDocument()
-    ) { uri ->
-        if (uri != null) {
-            try {
-                val json = contentResolver
-                    .openInputStream(uri)
-                    ?.bufferedReader()
-                    ?.readText()
-
-                if (!json.isNullOrEmpty()) {
-                    onRuleFileResult?.invoke(json)
-                }
-            } catch (e: Exception) {
-                Toast.makeText(
-                    this,
-                    getString(
-                        R.string.error_reading_file,
-                        e.message ?: ""
-                    ),
-                    Toast.LENGTH_SHORT
-                ).show()
+    private val vpnPermLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.StartActivityForResult()
+        ) { result ->
+            if (result.resultCode == RESULT_OK) {
+                startVpn()
             }
         }
 
-        onRuleFileResult = null
-    }
+    private var onRuleFileResult: ((String) -> Unit)? = null
+
+    private val ruleFileLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.OpenDocument()
+        ) { uri ->
+
+            if (uri != null) {
+
+                try {
+
+                    val json =
+                        contentResolver
+                            .openInputStream(uri)
+                            ?.bufferedReader()
+                            ?.readText()
+
+                    if (!json.isNullOrEmpty()) {
+                        onRuleFileResult?.invoke(json)
+                    }
+
+                } catch (e: Exception) {
+
+                    Toast.makeText(
+                        this,
+                        getString(
+                            R.string.error_reading_file,
+                            e.message ?: ""
+                        ),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+
+            onRuleFileResult = null
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         if (isTV()) {
-            startActivity(Intent(this, TvMainActivity::class.java))
+
+            startActivity(
+                Intent(
+                    this,
+                    TvMainActivity::class.java
+                )
+            )
+
             finish()
             return
         }
@@ -98,19 +117,31 @@ class MainActivity : ComponentActivity() {
         handleWidgetIntent(intent)
 
         setContent {
-            var localeVersion by remember { mutableIntStateOf(0) }
 
-            val localizedContext = remember(localeVersion) {
-                LocaleHelper.applyLocaleToActivity(this@MainActivity)
-                LocaleHelper.applyLocale(this@MainActivity)
+            var localeVersion by remember {
+                mutableIntStateOf(0)
             }
+
+            val localizedContext =
+                remember(localeVersion) {
+
+                    LocaleHelper.applyLocaleToActivity(
+                        this@MainActivity
+                    )
+
+                    LocaleHelper.applyLocale(
+                        this@MainActivity
+                    )
+                }
 
             CompositionLocalProvider(
                 LocalContext provides localizedContext
             ) {
+
                 ProxyBoxTheme {
 
-                    val vpnState by CoreService.vpnState.collectAsState()
+                    val vpnState by
+                        CoreService.vpnState.collectAsState()
 
                     var showSettings by remember {
                         mutableStateOf(false)
@@ -124,30 +155,36 @@ class MainActivity : ComponentActivity() {
 
                         SplitTunnelScreen(
                             viewModel = viewModel,
+
                             onBack = {
                                 showSplitTunnel = false
                             },
+
                             onReconnect = {
                                 reconnectIfActive()
-                            },
+                            }
                         )
 
                     } else if (showSettings) {
 
                         SettingsScreen(
                             viewModel = viewModel,
+
                             onBack = {
                                 showSettings = false
                             },
+
                             onOpenSplitTunnel = {
                                 showSplitTunnel = true
                             },
+
                             onLanguageChanged = {
                                 localeVersion++
                             },
+
                             onLogout = {
                                 logoutAndReturnToLogin()
-                            },
+                            }
                         )
 
                     } else {
@@ -157,6 +194,7 @@ class MainActivity : ComponentActivity() {
                             vpnState = vpnState,
 
                             onConnectToggle = {
+
                                 if (CoreService.isActive) {
                                     stopVpn()
                                 } else {
@@ -165,6 +203,7 @@ class MainActivity : ComponentActivity() {
                             },
 
                             onAddProfile = {
+
                                 startActivity(
                                     Intent(
                                         this@MainActivity,
@@ -178,18 +217,24 @@ class MainActivity : ComponentActivity() {
                             },
 
                             onPickRuleFile = {
+
                                 onRuleFileResult = { json ->
                                     showNameRuleDialogFromFile(json)
                                 }
 
                                 try {
+
                                     ruleFileLauncher.launch(
                                         arrayOf("*/*")
                                     )
+
                                 } catch (e: Exception) {
+
                                     Toast.makeText(
                                         this@MainActivity,
-                                        getString(R.string.no_file_manager),
+                                        getString(
+                                            R.string.no_file_manager
+                                        ),
                                         Toast.LENGTH_SHORT
                                     ).show()
                                 }
@@ -201,7 +246,7 @@ class MainActivity : ComponentActivity() {
 
                             onOpenSplitTunnel = {
                                 showSplitTunnel = true
-                            },
+                            }
                         )
                     }
                 }
@@ -210,110 +255,161 @@ class MainActivity : ComponentActivity() {
     }
 
     /**
-     * Automatyczne odświeżanie konfiguracji COOL-VPN.
+     * Automatyczne odświeżanie COOL-VPN.
      *
-     * Uruchamia się:
-     * - po otwarciu aplikacji,
-     * - po powrocie z tła,
-     * - po powrocie z innego ekranu.
+     * Przy każdym powrocie aplikacji na pierwszy plan:
      *
-     * Pobiera aktualną konfigurację z mastera i zapisuje ją
-     * do lokalnej bazy Room.
+     * 1. Pobieramy aktualną konfigurację z mastera.
+     * 2. Aktualizujemy datę wygaśnięcia.
+     * 3. Pobieramy aktualną listę serwerów/IP.
+     * 4. Zapisujemy konfigurację do Room.
+     * 5. Lista serwerów aktualizuje się automatycznie.
      */
     override fun onResume() {
         super.onResume()
 
         lifecycleScope.launch {
 
-            val result = withContext(Dispatchers.IO) {
-                CoolVpnApi(this@MainActivity).refresh()
-            }
+            val api =
+                CoolVpnApi(this@MainActivity)
+
+            val result =
+                withContext(Dispatchers.IO) {
+                    api.refresh()
+                }
 
             if (!result.ok) {
-                Toast.makeText(
-                    this@MainActivity,
-                    "COOL-VPN: nie udało się odświeżyć konfiguracji: ${
-                        result.error ?: "nieznany błąd"
-                    }",
-                    Toast.LENGTH_LONG
-                ).show()
-
                 return@launch
             }
 
-            val subscription = result.subscription
+            /*
+             * Aktualizacja daty subskrypcji.
+             *
+             * CoolVpnApi.refresh() zapisuje expiresAt
+             * do SharedPreferences.
+             */
+            viewModel.refreshCoolVpnExpiry()
+
+            /*
+             * Aktualizacja listy serwerów.
+             *
+             * Master zwraca cały aktualny subscription.
+             * Stara lista COOL-VPN zostanie zastąpiona
+             * aktualną listą.
+             */
+            val subscription =
+                result.subscription
 
             if (subscription.isNullOrBlank()) {
-                Toast.makeText(
-                    this@MainActivity,
-                    "COOL-VPN: master nie zwrócił konfiguracji.",
-                    Toast.LENGTH_LONG
-                ).show()
-
                 return@launch
             }
 
-            val imported = withContext(Dispatchers.IO) {
-                ProfileRepository(
-                    AppDatabase.getInstance(applicationContext)
-                ).importCoolVpnSubscription(subscription)
-            }
+            withContext(Dispatchers.IO) {
 
-            if (!imported) {
-                Toast.makeText(
-                    this@MainActivity,
-                    "COOL-VPN: pobrano konfigurację, ale nie udało się jej zapisać.",
-                    Toast.LENGTH_LONG
-                ).show()
+                ProfileRepository(
+                    AppDatabase.getInstance(
+                        applicationContext
+                    )
+                ).importCoolVpnSubscription(
+                    subscription
+                )
             }
         }
     }
 
-    private fun showNameRuleDialogFromFile(json: String) {
-        // File picker returned JSON. We add it with a default name since the
-        // Compose RulesDialog handles naming internally for URL imports.
-        // For file imports, prompt the user via an old-style dialog.
+    private fun showNameRuleDialogFromFile(
+        json: String
+    ) {
 
-        val input = android.widget.EditText(this).apply {
-            hint = getString(R.string.rule_name_hint)
-            setTextColor(0xFFE0E0FF.toInt())
-            setHintTextColor(0xFF555577.toInt())
-            setBackgroundColor(0xFF2A2A4A.toInt())
-            setPadding(32, 24, 32, 24)
-        }
+        val input =
+            android.widget.EditText(this).apply {
 
-        val container = android.widget.FrameLayout(this).apply {
-            setPadding(48, 24, 48, 0)
-            addView(input)
-        }
+                hint =
+                    getString(
+                        R.string.rule_name_hint
+                    )
+
+                setTextColor(
+                    0xFFE0E0FF.toInt()
+                )
+
+                setHintTextColor(
+                    0xFF555577.toInt()
+                )
+
+                setBackgroundColor(
+                    0xFF2A2A4A.toInt()
+                )
+
+                setPadding(
+                    32,
+                    24,
+                    32,
+                    24
+                )
+            }
+
+        val container =
+            android.widget.FrameLayout(this).apply {
+
+                setPadding(
+                    48,
+                    24,
+                    48,
+                    0
+                )
+
+                addView(input)
+            }
 
         android.app.AlertDialog.Builder(
             this,
             android.R.style.Theme_DeviceDefault_Dialog_Alert
         )
-            .setTitle(getString(R.string.name_rule_set))
+            .setTitle(
+                getString(
+                    R.string.name_rule_set
+                )
+            )
             .setView(container)
-            .setPositiveButton(getString(R.string.save)) { _, _ ->
+            .setPositiveButton(
+                getString(R.string.save)
+            ) { _, _ ->
 
-                val name = input.text
-                    .toString()
-                    .trim()
-                    .ifEmpty {
-                        getString(R.string.default_rule_name)
-                    }
+                val name =
+                    input.text
+                        .toString()
+                        .trim()
+                        .ifEmpty {
+                            getString(
+                                R.string.default_rule_name
+                            )
+                        }
 
-                viewModel.addRoutingRule(name, json) { error ->
+                viewModel.addRoutingRule(
+                    name,
+                    json
+                ) { error ->
 
                     if (error == null) {
+
                         Toast.makeText(
                             this,
-                            getString(R.string.rule_added, name),
+                            getString(
+                                R.string.rule_added,
+                                name
+                            ),
                             Toast.LENGTH_SHORT
                         ).show()
+
                     } else {
+
                         Toast.makeText(
                             this,
-                            getString(R.string.rule_invalid, error),
+                            getString(
+                                R.string.rule_invalid,
+                                error
+                            ),
                             Toast.LENGTH_LONG
                         ).show()
                     }
@@ -329,14 +425,19 @@ class MainActivity : ComponentActivity() {
     @Suppress("DEPRECATION")
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+
         handleWidgetIntent(intent)
     }
 
-    private fun handleWidgetIntent(intent: Intent) {
+    private fun handleWidgetIntent(
+        intent: Intent
+    ) {
 
         if (
             intent.action ==
-            com.dave_cli.proxybox.widget.VpnWidgetProvider.ACTION_CONNECT
+            com.dave_cli.proxybox.widget
+                .VpnWidgetProvider
+                .ACTION_CONNECT
         ) {
 
             if (!CoreService.isActive) {
@@ -346,6 +447,7 @@ class MainActivity : ComponentActivity() {
                 lifecycleScope.launch {
 
                     withTimeoutOrNull(3000) {
+
                         viewModel.profiles.first {
                             it.isNotEmpty()
                         }
@@ -361,9 +463,10 @@ class MainActivity : ComponentActivity() {
 
         val uiMode =
             (
-                getSystemService(UI_MODE_SERVICE)
-                    as UiModeManager
-                ).currentModeType
+                getSystemService(
+                    UI_MODE_SERVICE
+                ) as UiModeManager
+            ).currentModeType
 
         return uiMode ==
             Configuration.UI_MODE_TYPE_TELEVISION
@@ -371,11 +474,15 @@ class MainActivity : ComponentActivity() {
 
     private fun requestVpnPermission() {
 
-        val intent = VpnService.prepare(this)
+        val intent =
+            VpnService.prepare(this)
 
         if (intent != null) {
+
             vpnPermLauncher.launch(intent)
+
         } else {
+
             startVpn()
         }
     }
@@ -385,10 +492,12 @@ class MainActivity : ComponentActivity() {
         lifecycleScope.launch {
 
             val selected =
-                viewModel.profiles.value.firstOrNull {
-                    it.isSelected
-                }
-                    ?: viewModel.profiles.value.firstOrNull()
+                viewModel.profiles.value
+                    .firstOrNull {
+                        it.isSelected
+                    }
+                    ?: viewModel.profiles.value
+                        .firstOrNull()
 
             if (selected == null) {
 
@@ -402,20 +511,28 @@ class MainActivity : ComponentActivity() {
             }
 
             if (!selected.isSelected) {
-                viewModel.selectProfile(selected.id)
+
+                viewModel.selectProfile(
+                    selected.id
+                )
             }
 
-            val si = Intent(
-                this@MainActivity,
-                CoreService::class.java
-            ).apply {
-                action = CoreService.ACTION_START
-            }
+            val si =
+                Intent(
+                    this@MainActivity,
+                    CoreService::class.java
+                ).apply {
+
+                    action =
+                        CoreService.ACTION_START
+                }
 
             startForegroundService(si)
 
             if (pendingWidgetConnect) {
+
                 pendingWidgetConnect = false
+
                 moveTaskToBack(true)
             }
         }
@@ -431,11 +548,14 @@ class MainActivity : ComponentActivity() {
 
             withContext(Dispatchers.IO) {
 
-                CoolVpnApi(this@MainActivity)
-                    .clearSession()
+                CoolVpnApi(
+                    this@MainActivity
+                ).clearSession()
 
                 ProfileRepository(
-                    AppDatabase.getInstance(applicationContext)
+                    AppDatabase.getInstance(
+                        applicationContext
+                    )
                 ).clearCoolVpnSubscription()
             }
 
@@ -460,7 +580,9 @@ class MainActivity : ComponentActivity() {
                 this,
                 CoreService::class.java
             ).apply {
-                action = CoreService.ACTION_STOP
+
+                action =
+                    CoreService.ACTION_STOP
             }
         )
     }
