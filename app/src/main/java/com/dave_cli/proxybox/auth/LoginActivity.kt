@@ -55,9 +55,12 @@ class LoginActivity : ComponentActivity() {
         window.statusBarColor = bg
         window.navigationBarColor = bg
         window.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE or android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN)
-        showLogin()
-        if (api.hasSession()) refreshExistingSession()
-    }
+        if (api.hasSession()) {
+    openApp()
+    return
+}
+
+showLogin()
 
     private fun showLogin() {
         val scroll = ScrollView(this).apply {
