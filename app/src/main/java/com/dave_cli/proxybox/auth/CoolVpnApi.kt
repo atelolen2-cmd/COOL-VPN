@@ -2,6 +2,7 @@ package com.dave_cli.proxybox.auth
 
 import android.content.Context
 import android.provider.Settings
+import java.util.UUID
 import com.dave_cli.proxybox.BuildConfig
 import com.google.gson.Gson
 import com.google.gson.JsonObject
@@ -9,23 +10,9 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
-import java.util.UUID
 import java.util.concurrent.TimeUnit
 
-/**
- * COOL-VPN authentication gateway client.
- *
- * The 3x-ui Sub ID never lives in the APK.
- *
- * Authentication flow:
- * Android app
- *      ↓
- * COOL-VPN MASTER
- *      ↓
- * username + HWID
- *      ↓
- * 3x-ui
- */
+/** COOL-VPN authentication gateway client. */
 class CoolVpnApi(context: Context) {
 
     private val appContext = context.applicationContext
@@ -42,13 +29,7 @@ class CoolVpnApi(context: Context) {
         .readTimeout(30, TimeUnit.SECONDS)
         .build()
 
-    /**
-     * Stable HWID for this installation.
-     *
-     * The same HWID is used during login and refresh.
-     */
     private fun deviceHwid(): String {
-
         val stored = prefs.getString(KEY_HWID, null)
 
         if (!stored.isNullOrBlank()) {
@@ -60,10 +41,7 @@ class CoolVpnApi(context: Context) {
                 appContext.contentResolver,
                 Settings.Secure.ANDROID_ID
             )
-        }
-            .getOrNull()
-            ?.trim()
-            .orEmpty()
+        }.getOrNull()?.trim().orEmpty()
 
         val hwid = if (androidId.isNotBlank()) {
             "android-$androidId"
@@ -86,14 +64,6 @@ class CoolVpnApi(context: Context) {
         val error: String? = null
     )
 
-    /**
-     * Login.
-     *
-     * Master expects:
-     * username
-     * password
-     * hwid
-     */
     fun login(
         username: String,
         password: String
@@ -116,30 +86,22 @@ class CoolVpnApi(context: Context) {
     }
 
     /**
-     * Refresh COOL-VPN configuration.
+     * Pobiera aktualną konfigurację użytkownika z mastera.
      *
-     * IMPORTANT:
-     * The master uses the HWID when requesting the
-     * current subscription from 3x-ui.
-     *
-     * Therefore refresh MUST send:
-     *
-     * Authorization: Bearer TOKEN
-     * X-Hwid: DEVICE_HWID
+     * Aktualizuje:
+     * - listę serwerów
+     * - adresy IP
+     * - konfiguracje VLESS
+     * - datę wygaśnięcia
      */
     fun refresh(): Result {
 
-        val token = prefs.getString(
-            KEY_TOKEN,
-            null
-        )
+        val token = prefs.getString(KEY_TOKEN, null)
 
-        if (token.isNullOrBlank()) {
-            return Result(
-                false,
+            ?: return Result(
+                ok = false,
                 error = "Brak sesji"
             )
-        }
 
         val result = request(
             path = "/v1/config",
@@ -166,7 +128,6 @@ class CoolVpnApi(context: Context) {
         username: String,
         token: String
     ) {
-
         prefs.edit()
             .putString(KEY_USERNAME, username)
             .putString(KEY_TOKEN, token)
@@ -174,7 +135,6 @@ class CoolVpnApi(context: Context) {
     }
 
     fun clearSession() {
-
         prefs.edit()
             .remove(KEY_USERNAME)
             .remove(KEY_TOKEN)
@@ -183,21 +143,19 @@ class CoolVpnApi(context: Context) {
     }
 
     fun hasSession(): Boolean {
-
         return !prefs
             .getString(KEY_TOKEN, null)
             .isNullOrBlank()
     }
 
     fun username(): String {
-
-        return prefs
-            .getString(KEY_USERNAME, "")
-            ?: ""
+        return prefs.getString(
+            KEY_USERNAME,
+            ""
+        ) ?: ""
     }
 
     fun subscriptionExpiry(): String? {
-
         return prefs.getString(
             KEY_EXPIRES_AT,
             null
@@ -254,13 +212,6 @@ class CoolVpnApi(context: Context) {
         return raw
     }
 
-    /**
-     * Common HTTP request.
-     *
-     * hwid is optional because login sends the HWID
-     * inside JSON, while /v1/config requires it as
-     * the X-Hwid HTTP header.
-     */
     private fun request(
         path: String,
         method: String,
@@ -278,9 +229,6 @@ class CoolVpnApi(context: Context) {
             val builder = Request.Builder()
                 .url(url)
 
-            /**
-             * Bearer authentication.
-             */
             if (!token.isNullOrBlank()) {
 
                 builder.header(
@@ -289,10 +237,6 @@ class CoolVpnApi(context: Context) {
                 )
             }
 
-            /**
-             * HWID authentication used by the master
-             * when retrieving the current subscription.
-             */
             if (!hwid.isNullOrBlank()) {
 
                 builder.header(
@@ -304,10 +248,11 @@ class CoolVpnApi(context: Context) {
             if (method == "POST") {
 
                 builder.post(
-                    (body ?: "{}").toRequestBody(
-                        "application/json; charset=utf-8"
-                            .toMediaType()
-                    )
+                    (body ?: "{}")
+                        .toRequestBody(
+                            "application/json; charset=utf-8"
+                                .toMediaType()
+                        )
                 )
 
             } else {
@@ -336,7 +281,7 @@ class CoolVpnApi(context: Context) {
                     if (!response.isSuccessful || obj == null) {
 
                         return Result(
-                            false,
+                            ok = false,
                             error =
                                 obj
                                     ?.get("error")
@@ -348,18 +293,15 @@ class CoolVpnApi(context: Context) {
                     Result(
                         ok = true,
                         username =
-                            obj
-                                .get("username")
+                            obj.get("username")
                                 ?.asString,
 
                         subscription =
-                            obj
-                                .get("subscription")
+                            obj.get("subscription")
                                 ?.asString,
 
                         expiresAt =
-                            obj
-                                .get("expiresAt")
+                            obj.get("expiresAt")
                                 ?.asString,
 
                         error = null
@@ -369,7 +311,7 @@ class CoolVpnApi(context: Context) {
         } catch (e: Exception) {
 
             Result(
-                false,
+                ok = false,
                 error =
                     e.message
                         ?: "Nie można połączyć z serwerem COOL-VPN"
@@ -377,12 +319,6 @@ class CoolVpnApi(context: Context) {
         }
     }
 
-    /**
-     * Login and immediately save the session.
-     *
-     * Used where the login screen needs to establish
-     * the persistent session.
-     */
     fun loginAndSave(
         username: String,
         password: String
@@ -444,8 +380,7 @@ class CoolVpnApi(context: Context) {
                     }
 
                     val token =
-                        obj
-                            .get("token")
+                        obj.get("token")
                             ?.asString
                             ?: return Result(
                                 false,
@@ -454,8 +389,7 @@ class CoolVpnApi(context: Context) {
                             )
 
                     val user =
-                        obj
-                            .get("username")
+                        obj.get("username")
                             ?.asString
                             ?: username
 
@@ -467,8 +401,7 @@ class CoolVpnApi(context: Context) {
                     prefs.edit()
                         .putString(
                             KEY_EXPIRES_AT,
-                            obj
-                                .get("expiresAt")
+                            obj.get("expiresAt")
                                 ?.asString
                                 .orEmpty()
                         )
@@ -477,11 +410,9 @@ class CoolVpnApi(context: Context) {
                     Result(
                         true,
                         user,
-                        obj
-                            .get("subscription")
+                        obj.get("subscription")
                             ?.asString,
-                        obj
-                            .get("expiresAt")
+                        obj.get("expiresAt")
                             ?.asString,
                         null
                     )
@@ -500,19 +431,14 @@ class CoolVpnApi(context: Context) {
 
     companion object {
 
-        private const val PREFS =
-            "coolvpn_auth"
+        private const val PREFS = "coolvpn_auth"
 
-        private const val KEY_TOKEN =
-            "token"
+        private const val KEY_TOKEN = "token"
 
-        private const val KEY_USERNAME =
-            "username"
+        private const val KEY_USERNAME = "username"
 
-        private const val KEY_EXPIRES_AT =
-            "expiresAt"
+        private const val KEY_EXPIRES_AT = "expiresAt"
 
-        private const val KEY_HWID =
-            "hwid"
+        private const val KEY_HWID = "hwid"
     }
 }
