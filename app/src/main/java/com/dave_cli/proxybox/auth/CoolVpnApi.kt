@@ -251,13 +251,13 @@ class CoolVpnApi(context: Context) {
         return raw
     }
 
-    private fun jsonString(obj: JsonObject, key: String): String? {
-        val value = obj.get(key) ?: return null
+    private fun jsonString(obj: JsonObject?, key: String): String? {
+        val value = obj?.get(key) ?: return null
         return if (value.isJsonNull) null else value.asString
     }
 
-    private fun jsonInt(obj: JsonObject, key: String): Int? {
-        val value = obj.get(key) ?: return null
+    private fun jsonInt(obj: JsonObject?, key: String): Int? {
+        val value = obj?.get(key) ?: return null
         return if (value.isJsonNull) null else value.asInt
     }
 
