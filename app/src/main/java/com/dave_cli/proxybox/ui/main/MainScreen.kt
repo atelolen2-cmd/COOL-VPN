@@ -143,7 +143,7 @@ fun MainScreen(
         }
 
         Text(
-            text = "Subskrypcja: ${CoolVpnApi(context).subscriptionExpiryLabel()}",
+            text = "Subskrypcja: ${CoolVpnApi(context).subscriptionExpiryLabel()}    Urządzenia: ${CoolVpnApi(context).devicesUsed()}/${CoolVpnApi(context).devicesLimit()}",
             color = C.TextSecondary,
             fontSize = 11.sp,
             modifier = Modifier.padding(start = 24.dp, top = 4.dp, bottom = 2.dp)

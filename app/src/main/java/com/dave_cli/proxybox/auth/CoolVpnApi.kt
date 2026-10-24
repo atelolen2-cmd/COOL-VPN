@@ -61,7 +61,9 @@ class CoolVpnApi(context: Context) {
         val username: String? = null,
         val subscription: String? = null,
         val expiresAt: String? = null,
-        val error: String? = null
+        val error: String? = null,
+        val devicesUsed: Int? = null,
+        val devicesLimit: Int? = null
     )
 
     fun login(
@@ -119,6 +121,24 @@ class CoolVpnApi(context: Context) {
                     result.expiresAt.orEmpty()
                 )
                 .apply()
+
+            if (result.devicesUsed != null) {
+                prefs.edit()
+                    .putInt(
+                        KEY_DEVICES_USED,
+                        result.devicesUsed
+                    )
+                    .apply()
+            }
+
+            if (result.devicesLimit != null) {
+                prefs.edit()
+                    .putInt(
+                        KEY_DEVICES_LIMIT,
+                        result.devicesLimit
+                    )
+                    .apply()
+            }
         }
 
         return result
@@ -160,6 +180,14 @@ class CoolVpnApi(context: Context) {
             KEY_EXPIRES_AT,
             null
         )
+    }
+
+    fun devicesUsed(): Int {
+        return prefs.getInt(KEY_DEVICES_USED, 0)
+    }
+
+    fun devicesLimit(): Int {
+        return prefs.getInt(KEY_DEVICES_LIMIT, 0)
     }
 
     fun subscriptionExpiryLabel(): String {
@@ -304,7 +332,17 @@ class CoolVpnApi(context: Context) {
                             obj.get("expiresAt")
                                 ?.asString,
 
-                        error = null
+                        error = null,
+
+                        devicesUsed =
+                            obj.getAsJsonObject("hwidStatus")
+                                ?.get("registered")
+                                ?.asInt,
+
+                        devicesLimit =
+                            obj.getAsJsonObject("hwidStatus")
+                                ?.get("limit")
+                                ?.asInt
                     )
                 }
 
@@ -430,6 +468,9 @@ class CoolVpnApi(context: Context) {
     }
 
     companion object {
+        private const val KEY_DEVICES_USED = "devices_used"
+        private const val KEY_DEVICES_LIMIT = "devices_limit"
+
 
         private const val PREFS = "coolvpn_auth"
 
