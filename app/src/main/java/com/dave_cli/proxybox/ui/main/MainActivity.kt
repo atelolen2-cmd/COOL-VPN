@@ -65,9 +65,7 @@ class MainActivity : ComponentActivity() {
         ) { uri ->
 
             if (uri != null) {
-
                 try {
-
                     val json =
                         contentResolver
                             .openInputStream(uri)
@@ -79,7 +77,6 @@ class MainActivity : ComponentActivity() {
                     }
 
                 } catch (e: Exception) {
-
                     Toast.makeText(
                         this,
                         getString(
@@ -98,14 +95,12 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         if (isTV()) {
-
             startActivity(
                 Intent(
                     this,
                     TvMainActivity::class.java
                 )
             )
-
             finish()
             return
         }
@@ -222,11 +217,9 @@ class MainActivity : ComponentActivity() {
                                 }
 
                                 try {
-
                                     ruleFileLauncher.launch(
                                         arrayOf("*/*")
                                     )
-
                                 } catch (e: Exception) {
 
                                     Toast.makeText(
@@ -253,17 +246,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    /*
-     * COOL-VPN AUTO REFRESH
-     *
-     * Przy każdym powrocie aplikacji na pierwszy plan:
-     *
-     * - pobieramy aktualną konfigurację z mastera
-     * - aktualizujemy datę wygaśnięcia
-     * - aktualizujemy listę VPS/IP
-     * - aktualizujemy konfiguracje VLESS
-     * - zapisujemy dane do Room
-     */
     override fun onResume() {
         super.onResume()
 
@@ -283,16 +265,6 @@ class MainActivity : ComponentActivity() {
                 return@launch
             }
 
-            /*
-             * Aktualizacja daty wygaśnięcia.
-             *
-             * Ta funkcja musi istnieć w MainViewModel.kt.
-             */
-            viewModel.refreshCoolVpnExpiry()
-
-            /*
-             * Aktualizacja listy serwerów.
-             */
             val subscription =
                 result.subscription
 
