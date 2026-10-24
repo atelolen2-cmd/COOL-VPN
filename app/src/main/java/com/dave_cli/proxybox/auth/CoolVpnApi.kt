@@ -445,18 +445,37 @@ class CoolVpnApi(context: Context) {
                         )
                         .apply()
 
-                    Result(
-                        true,
-                        user,
-                        obj.get("subscription")
-                            ?.asString,
-                        obj.get("expiresAt")
-                            ?.asString,
-                        null
-                    )
-                }
+                    val loginResult = Result(
+            ok = true,
+            username = user,
+            subscription = obj.get("subscription")
+                ?.asString,
+            expiresAt = obj.get("expiresAt")
+                ?.asString,
+            error = null,
+            devicesUsed = obj.getAsJsonObject("hwidStatus")
+                ?.get("registered")
+                ?.asInt,
+            devicesLimit = obj.getAsJsonObject("hwidStatus")
+                ?.get("limit")
+                ?.asInt
+        )
 
-        } catch (e: Exception) {
+        if (loginResult.devicesUsed != null) {
+            prefs.edit()
+                .putInt(KEY_DEVICES_USED, loginResult.devicesUsed)
+                .apply()
+        }
+
+        if (loginResult.devicesLimit != null) {
+            prefs.edit()
+                .putInt(KEY_DEVICES_LIMIT, loginResult.devicesLimit)
+                .apply()
+        }
+
+        loginResult
+
+    } catch (e: Exception) {
 
             Result(
                 false,
