@@ -101,6 +101,7 @@ class MainActivity : ComponentActivity() {
                     TvMainActivity::class.java
                 )
             )
+
             finish()
             return
         }
@@ -149,11 +150,9 @@ class MainActivity : ComponentActivity() {
 
                         SplitTunnelScreen(
                             viewModel = viewModel,
-
                             onBack = {
                                 showSplitTunnel = false
                             },
-
                             onReconnect = {
                                 reconnectIfActive()
                             }
@@ -163,19 +162,15 @@ class MainActivity : ComponentActivity() {
 
                         SettingsScreen(
                             viewModel = viewModel,
-
                             onBack = {
                                 showSettings = false
                             },
-
                             onOpenSplitTunnel = {
                                 showSplitTunnel = true
                             },
-
                             onLanguageChanged = {
                                 localeVersion++
                             },
-
                             onLogout = {
                                 logoutAndReturnToLogin()
                             }
@@ -188,7 +183,6 @@ class MainActivity : ComponentActivity() {
                             vpnState = vpnState,
 
                             onConnectToggle = {
-
                                 if (CoreService.isActive) {
                                     stopVpn()
                                 } else {
@@ -197,13 +191,12 @@ class MainActivity : ComponentActivity() {
                             },
 
                             onAddProfile = {
-
                                 startActivity(
                                     Intent(
                                         this@MainActivity,
                                         AddProfileActivity::class.java
                                     )
-                                }
+                                )
                             },
 
                             onOpenSettings = {
@@ -211,25 +204,7 @@ class MainActivity : ComponentActivity() {
                             },
 
                             onPickRuleFile = {
-
-                                onRuleFileResult = { json ->
-                                    showNameRuleDialogFromFile(json)
-                                }
-
-                                try {
-                                    ruleFileLauncher.launch(
-                                        arrayOf("*/*")
-                                    )
-                                } catch (e: Exception) {
-
-                                    Toast.makeText(
-                                        this@MainActivity,
-                                        getString(
-                                            R.string.no_file_manager
-                                        ),
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
+                                pickRuleFile()
                             },
 
                             onReconnect = {
@@ -282,6 +257,30 @@ class MainActivity : ComponentActivity() {
                     subscription
                 )
             }
+        }
+    }
+
+    private fun pickRuleFile() {
+
+        onRuleFileResult = { json ->
+            showNameRuleDialogFromFile(json)
+        }
+
+        try {
+
+            ruleFileLauncher.launch(
+                arrayOf("*/*")
+            )
+
+        } catch (e: Exception) {
+
+            Toast.makeText(
+                this@MainActivity,
+                getString(
+                    R.string.no_file_manager
+                ),
+                Toast.LENGTH_SHORT
+            ).show()
         }
     }
 
@@ -569,4 +568,4 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-                            }
+}
