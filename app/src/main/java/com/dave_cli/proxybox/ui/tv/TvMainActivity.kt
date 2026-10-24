@@ -80,7 +80,9 @@ class TvMainActivity : FragmentActivity() {
         } else {
             getString(R.string.coolvpn_subscription_date, expiryLabel)
         }
-
+val coolVpnApi = CoolVpnApi(this)
+binding.tvDeviceCount.text =
+    "Urządzenia: ${coolVpnApi.devicesUsed()}/${coolVpnApi.devicesLimit()}"
         adapter = TvProfileAdapter(
             context = this,
             onClick = { profile ->
@@ -109,7 +111,50 @@ class TvMainActivity : FragmentActivity() {
             view.elevation = if (focused) 12f else 0f
         }
         binding.btnConnect.post { binding.btnConnect.requestFocus() }
+binding.btnRefresh.setOnClickListener {
+    binding.btnRefresh.isEnabled = false
+    binding.btnRefresh.text = "ODŚWIEŻANIE…"
 
+    lifecycleScope.launch {
+        val result = withContext(Dispatchers.IO) {
+            CoolVpnApi(this@TvMainActivity).refresh()
+        }
+
+        if (result.ok) {
+            val api = CoolVpnApi(this@TvMainActivity)
+
+            val expiryLabel = api.subscriptionExpiryLabel()
+
+            binding.tvSubscriptionExpiry.text =
+                if (expiryLabel == "DOŻYWOTNIO") {
+                    getString(R.string.coolvpn_subscription_lifetime)
+                } else {
+                    getString(
+                        R.string.coolvpn_subscription_date,
+                        expiryLabel
+                    )
+                }
+
+            binding.tvDeviceCount.text =
+                "Urządzenia: ${api.devicesUsed()}/${api.devicesLimit()}"
+
+            Toast.makeText(
+                this@TvMainActivity,
+                "Dane zostały odświeżone",
+                Toast.LENGTH_SHORT
+            ).show()
+        } else {
+            Toast.makeText(
+                this@TvMainActivity,
+                result.error ?: "Nie udało się odświeżyć danych",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+
+        binding.btnRefresh.text = "ODŚWIEŻ"
+        binding.btnRefresh.isEnabled = true
+    }
+}
         binding.btnAddConfig.setOnClickListener {
             startActivity(Intent(this, LocalServerActivity::class.java))
         }
