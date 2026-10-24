@@ -16,14 +16,32 @@
         android:textStyle="bold"
         android:layout_marginBottom="4dp"/>
 
-    <TextView
-        android:id="@+id/tvSubscriptionExpiry"
+    <!-- Subskrypcja + liczba urządzeń -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/coolvpn_subscription_lifetime"
-        android:textColor="#AAAACC"
-        android:textSize="13sp"
-        android:layout_marginBottom="12dp"/>
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="12dp">
+
+        <TextView
+            android:id="@+id/tvSubscriptionExpiry"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/coolvpn_subscription_lifetime"
+            android:textColor="#AAAACC"
+            android:textSize="13sp"/>
+
+        <TextView
+            android:id="@+id/tvDeviceCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Urządzenia: —/—"
+            android:textColor="#AAAACC"
+            android:textSize="13sp"
+            android:gravity="end"/>
+    </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -94,20 +112,36 @@
                     android:gravity="center"
                     android:layout_marginBottom="8dp"/>
 
+                <!-- CONNECT -->
                 <Button
                     android:id="@+id/btnConnect"
                     android:layout_width="match_parent"
                     android:layout_height="54dp"
                     android:text="@string/connect"
                     android:textSize="18sp"
-                    android:layout_marginBottom="10dp"
+                    android:layout_marginBottom="8dp"
                     android:background="@drawable/tv_connect_focus"
                     android:textColor="#FFF"
                     android:focusable="true"
                     android:nextFocusLeft="@id/lvProfiles"
-                    android:nextFocusDown="@id/btnAddConfig"
+                    android:nextFocusDown="@id/btnRefresh"
                     android:focusableInTouchMode="true"/>
 
+                <!-- ODŚWIEŻ -->
+                <Button
+                    android:id="@+id/btnRefresh"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:text="ODŚWIEŻ"
+                    android:textSize="13sp"
+                    android:layout_marginBottom="2dp"
+                    android:background="@drawable/tv_btn_focus"
+                    android:textColor="#60A5FA"
+                    android:focusable="true"
+                    android:nextFocusLeft="@id/lvProfiles"
+                    android:nextFocusDown="@id/btnAddConfig"/>
+
+                <!-- ADD CONFIG VIA PHONE -->
                 <Button
                     android:id="@+id/btnAddConfig"
                     android:layout_width="match_parent"
@@ -119,6 +153,7 @@
                     android:focusable="true"
                     android:nextFocusLeft="@id/lvProfiles"/>
 
+                <!-- PING ALL -->
                 <Button
                     android:id="@+id/btnPingAll"
                     android:layout_width="match_parent"
@@ -131,6 +166,7 @@
                     android:focusable="true"
                     android:nextFocusLeft="@id/lvProfiles"/>
 
+                <!-- TEST CONNECTION -->
                 <Button
                     android:id="@+id/btnTestConnection"
                     android:layout_width="match_parent"
@@ -143,6 +179,7 @@
                     android:focusable="true"
                     android:nextFocusLeft="@id/lvProfiles"/>
 
+                <!-- SPEED TEST -->
                 <Button
                     android:id="@+id/btnSpeedTest"
                     android:layout_width="match_parent"
@@ -155,6 +192,7 @@
                     android:focusable="true"
                     android:nextFocusLeft="@id/lvProfiles"/>
 
+                <!-- SPLIT TUNNEL -->
                 <Button
                     android:id="@+id/btnSplitTunnel"
                     android:layout_width="match_parent"
@@ -191,6 +229,7 @@
                     android:focusable="true"
                     android:nextFocusLeft="@id/lvProfiles"/>
 
+                <!-- ROUTING RULES -->
                 <Button
                     android:id="@+id/btnRules"
                     android:layout_width="match_parent"
@@ -203,6 +242,7 @@
                     android:focusable="true"
                     android:nextFocusLeft="@id/lvProfiles"/>
 
+                <!-- IP CHECK -->
                 <Button
                     android:id="@+id/btnIpCheck"
                     android:layout_width="match_parent"
@@ -215,6 +255,7 @@
                     android:focusable="true"
                     android:nextFocusLeft="@id/lvProfiles"/>
 
+                <!-- GEO PROFILE -->
                 <Button
                     android:id="@+id/btnGeoProfile"
                     android:layout_width="match_parent"
@@ -227,6 +268,7 @@
                     android:focusable="true"
                     android:nextFocusLeft="@id/lvProfiles"/>
 
+                <!-- UPDATE GEO -->
                 <Button
                     android:id="@+id/btnUpdateGeo"
                     android:layout_width="match_parent"
@@ -239,6 +281,7 @@
                     android:focusable="true"
                     android:nextFocusLeft="@id/lvProfiles"/>
 
+                <!-- UPDATE APP — pozostaje bez zmian -->
                 <Button
                     android:id="@+id/btnUpdateApp"
                     android:layout_width="match_parent"
@@ -251,18 +294,20 @@
                     android:focusable="true"
                     android:nextFocusLeft="@id/lvProfiles"/>
 
-        <Button
-            android:id="@+id/btnLogout"
-            android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:layout_marginTop="14dp"
-            android:text="@string/logout"
-            android:textSize="13sp"
-            android:background="@drawable/tv_btn_focus"
-            android:textColor="#FF7070"
-            android:focusable="true"
-            android:nextFocusLeft="@id/lvProfiles"/>
+                <!-- LOGOUT -->
+                <Button
+                    android:id="@+id/btnLogout"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="14dp"
+                    android:text="@string/logout"
+                    android:textSize="13sp"
+                    android:background="@drawable/tv_btn_focus"
+                    android:textColor="#FF7070"
+                    android:focusable="true"
+                    android:nextFocusLeft="@id/lvProfiles"/>
 
+                <!-- LANGUAGE -->
                 <Button
                     android:id="@+id/btnLanguage"
                     android:layout_width="match_parent"
@@ -279,4 +324,5 @@
         </ScrollView>
 
     </LinearLayout>
+
 </LinearLayout>
