@@ -251,6 +251,11 @@ class CoolVpnApi(context: Context) {
         return raw
     }
 
+    private fun jsonString(obj: JsonObject, key: String): String? {
+        val value = obj.get(key) ?: return null
+        return if (value.isJsonNull) null else value.asString
+    }
+
     private fun request(
         path: String,
         method: String,
@@ -335,16 +340,13 @@ class CoolVpnApi(context: Context) {
                     Result(
                         ok = true,
                         username =
-                            obj.get("username")
-                                ?.asString,
+                            jsonString(obj, "username"),
 
                         subscription =
-                            obj.get("subscription")
-                                ?.asString,
+                            jsonString(obj, "subscription"),
 
                         expiresAt =
-                            obj.get("expiresAt")
-                                ?.asString,
+                            jsonString(obj, "expiresAt"),
 
                         error = null,
 
@@ -432,16 +434,14 @@ class CoolVpnApi(context: Context) {
                     }
 
                     val token =
-                        obj.get("token")
-                            ?.asString
+                        jsonString(obj, "token")
                             ?: return Result(
                                 ok = false,
                                 error = "Serwer nie zwrócił sesji"
                             )
 
                     val user =
-                        obj.get("username")
-                            ?.asString
+                        jsonString(obj, "username")
                             ?: username
 
                     saveSession(
@@ -452,8 +452,7 @@ class CoolVpnApi(context: Context) {
                     prefs.edit()
                         .putString(
                             KEY_EXPIRES_AT,
-                            obj.get("expiresAt")
-                                ?.asString
+                            jsonString(obj, "expiresAt")
                                 .orEmpty()
                         )
                         .apply()
@@ -462,11 +461,9 @@ class CoolVpnApi(context: Context) {
                         ok = true,
                         username = user,
                         subscription =
-                            obj.get("subscription")
-                                ?.asString,
+                            jsonString(obj, "subscription"),
                         expiresAt =
-                            obj.get("expiresAt")
-                                ?.asString,
+                            jsonString(obj, "expiresAt"),
                         error = null
                     )
                 }
