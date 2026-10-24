@@ -256,6 +256,11 @@ class CoolVpnApi(context: Context) {
         return if (value.isJsonNull) null else value.asString
     }
 
+    private fun jsonInt(obj: JsonObject, key: String): Int? {
+        val value = obj.get(key) ?: return null
+        return if (value.isJsonNull) null else value.asInt
+    }
+
     private fun request(
         path: String,
         method: String,
@@ -327,9 +332,7 @@ class CoolVpnApi(context: Context) {
                         return Result(
                             ok = false,
                             error =
-                                obj
-                                    ?.get("error")
-                                    ?.asString
+                                jsonString(obj, "error")
                                     ?: "Błąd serwera HTTP ${response.code}"
                         )
                     }
@@ -352,13 +355,11 @@ class CoolVpnApi(context: Context) {
 
                         devicesUsed =
                             hwidStatus
-                                ?.get("registered")
-                                ?.asInt,
+                                ?.let { jsonInt(it, "registered") },
 
                         devicesLimit =
                             hwidStatus
-                                ?.get("limit")
-                                ?.asInt
+                                ?.let { jsonInt(it, "limit") }
                     )
                 }
 
@@ -426,9 +427,7 @@ class CoolVpnApi(context: Context) {
                         return Result(
                             ok = false,
                             error =
-                                obj
-                                    ?.get("error")
-                                    ?.asString
+                                jsonString(obj, "error")
                                     ?: "Błąd logowania (${response.code})"
                         )
                     }
