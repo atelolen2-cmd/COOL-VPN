@@ -95,15 +95,18 @@ class CoolVpnApi(context: Context) {
      * - adresy IP
      * - konfiguracje VLESS
      * - datę wygaśnięcia
+     * - liczbę zarejestrowanych HWID
+     * - limit urządzeń
      */
     fun refresh(): Result {
 
-        val token = prefs.getString(KEY_TOKEN, null)
-
-            ?: return Result(
-                ok = false,
-                error = "Brak sesji"
-            )
+        val token = prefs.getString(
+            KEY_TOKEN,
+            null
+        ) ?: return Result(
+            ok = false,
+            error = "Brak sesji"
+        )
 
         val result = request(
             path = "/v1/config",
@@ -159,6 +162,8 @@ class CoolVpnApi(context: Context) {
             .remove(KEY_USERNAME)
             .remove(KEY_TOKEN)
             .remove(KEY_EXPIRES_AT)
+            .remove(KEY_DEVICES_USED)
+            .remove(KEY_DEVICES_LIMIT)
             .apply()
     }
 
@@ -183,11 +188,17 @@ class CoolVpnApi(context: Context) {
     }
 
     fun devicesUsed(): Int {
-        return prefs.getInt(KEY_DEVICES_USED, 0)
+        return prefs.getInt(
+            KEY_DEVICES_USED,
+            0
+        )
     }
 
     fun devicesLimit(): Int {
-        return prefs.getInt(KEY_DEVICES_LIMIT, 0)
+        return prefs.getInt(
+            KEY_DEVICES_LIMIT,
+            0
+        )
     }
 
     fun subscriptionExpiryLabel(): String {
@@ -318,6 +329,9 @@ class CoolVpnApi(context: Context) {
                         )
                     }
 
+                    val hwidStatus =
+                        obj.getAsJsonObject("hwidStatus")
+
                     Result(
                         ok = true,
                         username =
@@ -335,12 +349,12 @@ class CoolVpnApi(context: Context) {
                         error = null,
 
                         devicesUsed =
-                            obj.getAsJsonObject("hwidStatus")
+                            hwidStatus
                                 ?.get("registered")
                                 ?.asInt,
 
                         devicesLimit =
-                            obj.getAsJsonObject("hwidStatus")
+                            hwidStatus
                                 ?.get("limit")
                                 ?.asInt
                     )
@@ -408,7 +422,7 @@ class CoolVpnApi(context: Context) {
                     if (!response.isSuccessful || obj == null) {
 
                         return Result(
-                            false,
+                            ok = false,
                             error =
                                 obj
                                     ?.get("error")
@@ -421,9 +435,8 @@ class CoolVpnApi(context: Context) {
                         obj.get("token")
                             ?.asString
                             ?: return Result(
-                                false,
-                                error =
-                                    "Serwer nie zwrócił sesji"
+                                ok = false,
+                                error = "Serwer nie zwrócił sesji"
                             )
 
                     val user =
@@ -445,40 +458,23 @@ class CoolVpnApi(context: Context) {
                         )
                         .apply()
 
-                    val loginResult = Result(
-            ok = true,
-            username = user,
-            subscription = obj.get("subscription")
-                ?.asString,
-            expiresAt = obj.get("expiresAt")
-                ?.asString,
-            error = null,
-            devicesUsed = obj.getAsJsonObject("hwidStatus")
-                ?.get("registered")
-                ?.asInt,
-            devicesLimit = obj.getAsJsonObject("hwidStatus")
-                ?.get("limit")
-                ?.asInt
-        )
+                    Result(
+                        ok = true,
+                        username = user,
+                        subscription =
+                            obj.get("subscription")
+                                ?.asString,
+                        expiresAt =
+                            obj.get("expiresAt")
+                                ?.asString,
+                        error = null
+                    )
+                }
 
-        if (loginResult.devicesUsed != null) {
-            prefs.edit()
-                .putInt(KEY_DEVICES_USED, loginResult.devicesUsed)
-                .apply()
-        }
-
-        if (loginResult.devicesLimit != null) {
-            prefs.edit()
-                .putInt(KEY_DEVICES_LIMIT, loginResult.devicesLimit)
-                .apply()
-        }
-
-        loginResult
-
-    } catch (e: Exception) {
+        } catch (e: Exception) {
 
             Result(
-                false,
+                ok = false,
                 error =
                     e.message
                         ?: "Nie można połączyć z serwerem COOL-VPN"
@@ -487,9 +483,6 @@ class CoolVpnApi(context: Context) {
     }
 
     companion object {
-        private const val KEY_DEVICES_USED = "devices_used"
-        private const val KEY_DEVICES_LIMIT = "devices_limit"
-
 
         private const val PREFS = "coolvpn_auth"
 
@@ -500,5 +493,9 @@ class CoolVpnApi(context: Context) {
         private const val KEY_EXPIRES_AT = "expiresAt"
 
         private const val KEY_HWID = "hwid"
+
+        private const val KEY_DEVICES_USED = "devices_used"
+
+        private const val KEY_DEVICES_LIMIT = "devices_limit"
     }
 }
