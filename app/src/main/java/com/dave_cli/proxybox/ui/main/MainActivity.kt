@@ -47,6 +47,7 @@ class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels()
 
     private var pendingWidgetConnect = false
+    private var isRefreshing by mutableStateOf(false)
 
     private val vpnPermLauncher =
         registerForActivityResult(
@@ -101,7 +102,6 @@ class MainActivity : ComponentActivity() {
                     TvMainActivity::class.java
                 )
             )
-
             finish()
             return
         }
@@ -119,7 +119,6 @@ class MainActivity : ComponentActivity() {
 
             val localizedContext =
                 remember(localeVersion) {
-
                     LocaleHelper.applyLocaleToActivity(
                         this@MainActivity
                     )
@@ -181,7 +180,6 @@ class MainActivity : ComponentActivity() {
                         MainScreen(
                             viewModel = viewModel,
                             vpnState = vpnState,
-
                             onConnectToggle = {
                                 if (CoreService.isActive) {
                                     stopVpn()
@@ -189,7 +187,6 @@ class MainActivity : ComponentActivity() {
                                     requestVpnPermission()
                                 }
                             },
-
                             onAddProfile = {
                                 startActivity(
                                     Intent(
@@ -198,19 +195,35 @@ class MainActivity : ComponentActivity() {
                                     )
                                 )
                             },
-
                             onOpenSettings = {
                                 showSettings = true
                             },
-
                             onPickRuleFile = {
-                                pickRuleFile()
-                            },
+                                onRuleFileResult = { json ->
+                                    showNameRuleDialogFromFile(json)
+                                }
 
+                                try {
+                                    ruleFileLauncher.launch(
+                                        arrayOf("*/*")
+                                    )
+                                } catch (e: Exception) {
+                                    Toast.makeText(
+                                        this@MainActivity,
+                                        getString(
+                                            R.string.no_file_manager
+                                        ),
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            },
                             onReconnect = {
                                 reconnectIfActive()
                             },
-
+                            onRefresh = {
+                                refreshCoolVpn()
+                            },
+                            isRefreshing = isRefreshing,
                             onOpenSplitTunnel = {
                                 showSplitTunnel = true
                             }
@@ -221,66 +234,72 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    override fun onResume() {
-        super.onResume()
+    private fun refreshCoolVpn() {
+
+        if (isRefreshing) return
+
+        isRefreshing = true
 
         lifecycleScope.launch {
+            try {
+                val api = CoolVpnApi(this@MainActivity)
 
-            val api =
-                CoolVpnApi(
-                    this@MainActivity
-                )
-
-            val result =
-                withContext(Dispatchers.IO) {
+                val result = withContext(Dispatchers.IO) {
                     api.refresh()
                 }
 
-            if (!result.ok) {
-                return@launch
+                if (!result.ok) {
+                    Toast.makeText(
+                        this@MainActivity,
+                        "Odświeżanie nieudane: ${result.error ?: "Nieznany błąd"}",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    return@launch
+                }
+
+                val subscription = result.subscription
+
+                if (subscription.isNullOrBlank()) {
+                    Toast.makeText(
+                        this@MainActivity,
+                        "Serwer nie zwrócił konfiguracji VPN",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    return@launch
+                }
+
+                val imported = withContext(Dispatchers.IO) {
+                    ProfileRepository(
+                        AppDatabase.getInstance(
+                            applicationContext
+                        )
+                    ).importCoolVpnSubscription(subscription)
+                }
+
+                if (!imported) {
+                    Toast.makeText(
+                        this@MainActivity,
+                        "Nie udało się zapisać nowej konfiguracji",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    return@launch
+                }
+
+                Toast.makeText(
+                    this@MainActivity,
+                    "✓ Konfiguracja została zaktualizowana",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+            } catch (e: Exception) {
+                Toast.makeText(
+                    this@MainActivity,
+                    "Błąd odświeżania: ${e.message ?: "nieznany błąd"}",
+                    Toast.LENGTH_LONG
+                ).show()
+            } finally {
+                isRefreshing = false
             }
-
-            val subscription =
-                result.subscription
-
-            if (subscription.isNullOrBlank()) {
-                return@launch
-            }
-
-            withContext(Dispatchers.IO) {
-
-                ProfileRepository(
-                    AppDatabase.getInstance(
-                        applicationContext
-                    )
-                ).importCoolVpnSubscription(
-                    subscription
-                )
-            }
-        }
-    }
-
-    private fun pickRuleFile() {
-
-        onRuleFileResult = { json ->
-            showNameRuleDialogFromFile(json)
-        }
-
-        try {
-
-            ruleFileLauncher.launch(
-                arrayOf("*/*")
-            )
-
-        } catch (e: Exception) {
-
-            Toast.makeText(
-                this@MainActivity,
-                getString(
-                    R.string.no_file_manager
-                ),
-                Toast.LENGTH_SHORT
-            ).show()
         }
     }
 
@@ -290,7 +309,6 @@ class MainActivity : ComponentActivity() {
 
         val input =
             android.widget.EditText(this).apply {
-
                 hint =
                     getString(
                         R.string.rule_name_hint
@@ -318,14 +336,12 @@ class MainActivity : ComponentActivity() {
 
         val container =
             android.widget.FrameLayout(this).apply {
-
                 setPadding(
                     48,
                     24,
                     48,
                     0
                 )
-
                 addView(input)
             }
 
@@ -359,7 +375,6 @@ class MainActivity : ComponentActivity() {
                 ) { error ->
 
                     if (error == null) {
-
                         Toast.makeText(
                             this,
                             getString(
@@ -368,9 +383,7 @@ class MainActivity : ComponentActivity() {
                             ),
                             Toast.LENGTH_SHORT
                         ).show()
-
                     } else {
-
                         Toast.makeText(
                             this,
                             getString(
@@ -392,7 +405,6 @@ class MainActivity : ComponentActivity() {
     @Suppress("DEPRECATION")
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-
         handleWidgetIntent(intent)
     }
 
@@ -414,7 +426,6 @@ class MainActivity : ComponentActivity() {
                 lifecycleScope.launch {
 
                     withTimeoutOrNull(3000) {
-
                         viewModel.profiles.first {
                             it.isNotEmpty()
                         }
@@ -445,11 +456,8 @@ class MainActivity : ComponentActivity() {
             VpnService.prepare(this)
 
         if (intent != null) {
-
             vpnPermLauncher.launch(intent)
-
         } else {
-
             startVpn()
         }
     }
@@ -467,18 +475,15 @@ class MainActivity : ComponentActivity() {
                         .firstOrNull()
 
             if (selected == null) {
-
                 Toast.makeText(
                     this@MainActivity,
                     "Add a profile first",
                     Toast.LENGTH_SHORT
                 ).show()
-
                 return@launch
             }
 
             if (!selected.isSelected) {
-
                 viewModel.selectProfile(
                     selected.id
                 )
@@ -489,7 +494,6 @@ class MainActivity : ComponentActivity() {
                     this@MainActivity,
                     CoreService::class.java
                 ).apply {
-
                     action =
                         CoreService.ACTION_START
                 }
@@ -497,9 +501,7 @@ class MainActivity : ComponentActivity() {
             startForegroundService(si)
 
             if (pendingWidgetConnect) {
-
                 pendingWidgetConnect = false
-
                 moveTaskToBack(true)
             }
         }
@@ -547,7 +549,6 @@ class MainActivity : ComponentActivity() {
                 this,
                 CoreService::class.java
             ).apply {
-
                 action =
                     CoreService.ACTION_STOP
             }
@@ -557,13 +558,10 @@ class MainActivity : ComponentActivity() {
     private fun reconnectIfActive() {
 
         if (CoreService.isActive) {
-
             stopVpn()
 
             lifecycleScope.launch {
-
                 delay(500)
-
                 startVpn()
             }
         }

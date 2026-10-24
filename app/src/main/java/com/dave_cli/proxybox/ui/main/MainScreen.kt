@@ -59,6 +59,8 @@ fun MainScreen(
     onOpenSettings: () -> Unit,
     onPickRuleFile: () -> Unit,
     onReconnect: () -> Unit,
+    onRefresh: () -> Unit,
+    isRefreshing: Boolean,
     onOpenSplitTunnel: () -> Unit = {},
 ) {
     val profiles by viewModel.profiles.collectAsState()
@@ -67,7 +69,6 @@ fun MainScreen(
     val routingRules by viewModel.routingRules.collectAsState()
     val context = LocalContext.current
 
-    // Dialog state
     var showRulesDialog by remember { mutableStateOf(false) }
     var showIpCheckDialog by remember { mutableStateOf(false) }
     var showPresetMenu by remember { mutableStateOf(false) }
@@ -77,9 +78,11 @@ fun MainScreen(
     var testResult by remember { mutableStateOf<String?>(null) }
     var isTesting by remember { mutableStateOf(false) }
 
-    // Auto-clear test result
     LaunchedEffect(testResult) {
-        if (testResult != null) { delay(4000); testResult = null }
+        if (testResult != null) {
+            delay(4000)
+            testResult = null
+        }
     }
 
     Column(
@@ -89,7 +92,6 @@ fun MainScreen(
             .statusBarsPadding()
             .navigationBarsPadding()
     ) {
-        // Header
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -104,18 +106,42 @@ fun MainScreen(
                 color = C.TextPrimary,
                 letterSpacing = (-0.5).sp,
             )
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .background(C.Surface, RoundedCornerShape(10.dp))
-                    .clickable(onClick = onOpenSettings),
-                contentAlignment = Alignment.Center
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("\u2699", fontSize = 16.sp, color = C.Primary)
+                Box(
+                    modifier = Modifier
+                        .height(36.dp)
+                        .width(96.dp)
+                        .background(C.Surface, RoundedCornerShape(10.dp))
+                        .clickable(
+                            enabled = !isRefreshing,
+                            onClick = onRefresh
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = if (isRefreshing) "…" else "↻  Odśwież",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (isRefreshing) C.TextSecondary else C.Primary
+                    )
+                }
+
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .background(C.Surface, RoundedCornerShape(10.dp))
+                        .clickable(onClick = onOpenSettings),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("\u2699", fontSize = 16.sp, color = C.Primary)
+                }
             }
         }
 
-        // Subscription status
         Text(
             text = "Subskrypcja: ${CoolVpnApi(context).subscriptionExpiryLabel()}",
             color = C.TextSecondary,
@@ -123,14 +149,12 @@ fun MainScreen(
             modifier = Modifier.padding(start = 24.dp, top = 4.dp, bottom = 2.dp)
         )
 
-        // Connect button
         ConnectSection(
             vpnState = vpnState,
             onToggle = onConnectToggle,
             onSpeedTest = { callback -> viewModel.runSpeedTest(callback) },
         )
 
-        // Tools
         ToolsSection(
             activePreset = activePreset,
             showPresetMenu = showPresetMenu,
@@ -139,7 +163,11 @@ fun MainScreen(
                 viewModel.setActivePreset(preset)
                 showPresetMenu = false
                 if (CoreService.isActive) {
-                    Toast.makeText(context, context.getString(R.string.reconnect_preset_toast), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.reconnect_preset_toast),
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             },
             onPresetMenuDismiss = { showPresetMenu = false },
@@ -149,14 +177,19 @@ fun MainScreen(
             isTesting = isTesting,
             onTest = {
                 isTesting = true
-                viewModel.testConnection { result -> testResult = result; isTesting = false }
+                viewModel.testConnection { result ->
+                    testResult = result
+                    isTesting = false
+                }
             },
             isPinging = isPinging,
             onPingAll = { viewModel.pingAllProfiles() },
-            onIpCheck = { viewModel.checkIp(); showIpCheckDialog = true },
+            onIpCheck = {
+                viewModel.checkIp()
+                showIpCheckDialog = true
+            },
         )
 
-        // Divider
         Box(
             Modifier
                 .fillMaxWidth()
@@ -165,7 +198,6 @@ fun MainScreen(
                 .background(C.Divider)
         )
 
-        // Profiles label
         Text(
             stringResource(R.string.profiles_label),
             color = C.Primary,
@@ -175,15 +207,17 @@ fun MainScreen(
             modifier = Modifier.padding(start = 24.dp, top = 8.dp, bottom = 4.dp)
         )
 
-        // Profiles list or empty
         if (profiles.isEmpty()) {
             Box(
-                modifier = Modifier.weight(1f).fillMaxWidth(),
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     stringResource(R.string.no_profiles),
-                    color = C.TextDim, fontSize = 14.sp,
+                    color = C.TextDim,
+                    fontSize = 14.sp,
                     textAlign = TextAlign.Center,
                 )
             }
@@ -205,22 +239,29 @@ fun MainScreen(
             )
         }
 
-        // Bottom bar
-        Box(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp)) {
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 12.dp)
+        ) {
             Button(
                 onClick = onAddProfile,
-                modifier = Modifier.fillMaxWidth().height(48.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
                 shape = RoundedCornerShape(14.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = C.Primary),
             ) {
                 Text("+", fontSize = 20.sp, fontWeight = FontWeight.Normal)
                 Spacer(Modifier.width(6.dp))
-                Text(stringResource(R.string.add_profile), fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                Text(
+                    stringResource(R.string.add_profile),
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
             }
         }
     }
-
-    // ---- Dialogs ----
 
     renameTarget?.let { p ->
         RenameDialog(
@@ -247,7 +288,10 @@ fun MainScreen(
                 onReconnect()
             },
             onDeleteRule = { viewModel.deleteRoutingRule(it) },
-            onImportFromFile = { showRulesDialog = false; onPickRuleFile() },
+            onImportFromFile = {
+                showRulesDialog = false
+                onPickRuleFile()
+            },
             onAddRule = { name, json, cb -> viewModel.addRoutingRule(name, json, cb) },
             onDismiss = { showRulesDialog = false },
         )
