@@ -18,7 +18,6 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.lifecycleScope
 import com.dave_cli.proxybox.R
 import com.dave_cli.proxybox.auth.CoolVpnApi
@@ -135,7 +134,7 @@ class MainActivity : ComponentActivity() {
                 }
 
             CompositionLocalProvider(
-                LocalContext provides localizedContext
+                androidx.compose.ui.platform.LocalContext provides localizedContext
             ) {
 
                 ProxyBoxTheme {
@@ -209,7 +208,7 @@ class MainActivity : ComponentActivity() {
                                         this@MainActivity,
                                         AddProfileActivity::class.java
                                     )
-                                )
+                                }
                             },
 
                             onOpenSettings = {
@@ -254,16 +253,16 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    /**
-     * Automatyczne odświeżanie COOL-VPN.
+    /*
+     * COOL-VPN AUTO REFRESH
      *
      * Przy każdym powrocie aplikacji na pierwszy plan:
      *
-     * 1. Pobieramy aktualną konfigurację z mastera.
-     * 2. Aktualizujemy datę wygaśnięcia.
-     * 3. Pobieramy aktualną listę serwerów/IP.
-     * 4. Zapisujemy konfigurację do Room.
-     * 5. Lista serwerów aktualizuje się automatycznie.
+     * - pobieramy aktualną konfigurację z mastera
+     * - aktualizujemy datę wygaśnięcia
+     * - aktualizujemy listę VPS/IP
+     * - aktualizujemy konfiguracje VLESS
+     * - zapisujemy dane do Room
      */
     override fun onResume() {
         super.onResume()
@@ -271,7 +270,9 @@ class MainActivity : ComponentActivity() {
         lifecycleScope.launch {
 
             val api =
-                CoolVpnApi(this@MainActivity)
+                CoolVpnApi(
+                    this@MainActivity
+                )
 
             val result =
                 withContext(Dispatchers.IO) {
@@ -283,19 +284,14 @@ class MainActivity : ComponentActivity() {
             }
 
             /*
-             * Aktualizacja daty subskrypcji.
+             * Aktualizacja daty wygaśnięcia.
              *
-             * CoolVpnApi.refresh() zapisuje expiresAt
-             * do SharedPreferences.
+             * Ta funkcja musi istnieć w MainViewModel.kt.
              */
             viewModel.refreshCoolVpnExpiry()
 
             /*
              * Aktualizacja listy serwerów.
-             *
-             * Master zwraca cały aktualny subscription.
-             * Stara lista COOL-VPN zostanie zastąpiona
-             * aktualną listą.
              */
             val subscription =
                 result.subscription
@@ -601,4 +597,4 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-}
+                            }
