@@ -423,7 +423,6 @@ class CoolVpnApi(context: Context) {
                         }.getOrNull()
 
                     if (!response.isSuccessful || obj == null) {
-
                         return Result(
                             ok = false,
                             error =
@@ -456,14 +455,20 @@ class CoolVpnApi(context: Context) {
                         )
                         .apply()
 
+                    val config = refresh()
+
                     Result(
                         ok = true,
                         username = user,
                         subscription =
-                            jsonString(obj, "subscription"),
+                            config.subscription
+                                ?: jsonString(obj, "subscription"),
                         expiresAt =
-                            jsonString(obj, "expiresAt"),
-                        error = null
+                            config.expiresAt
+                                ?: jsonString(obj, "expiresAt"),
+                        error = null,
+                        devicesUsed = config.devicesUsed,
+                        devicesLimit = config.devicesLimit
                     )
                 }
 
